@@ -17,7 +17,7 @@
     <div class="w-full max-w-5xl">
         <div class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator & Sharer</h1>
-            <p class="text-gray-400 mt-2 text-lg">Generate shareable configs for all available high-quality endpoints.</p>
+            <p class="text-gray-400 mt-2 text-lg">Generate shareable configs for any client.</p>
         </div>
 
         <div id="generate-section" class="text-center">
@@ -37,8 +37,8 @@
                                 <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
                                 <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
                                 <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-clash">Clash</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-v2ray">V2Ray/sing-box</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-uri">V2Ray URI</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-singbox">sing-box</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-uri">V2Ray URI List</button>
                             </nav>
                         </div>
                         <div id="tab-content-area"></div>
@@ -116,25 +116,20 @@
                 }
             }
             
-            function generateConfigForEndpoint(d1, endpoint, format) {
-                switch(format) {
-                    case 'v2ray1':
-                        return JSON.stringify({ tag: "WARP", type: "wireguard", server: endpoint.split(':')[0], server_port: parseInt(endpoint.split(':')[1]), local_address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peer_public_key: d1.peerPublicKey, reserved: d1.reserved, mtu: 1280 }, null, 2);
-                    case 'v2ray2':
-                        return JSON.stringify({ type: "wireguard", tag: "proxy", server: endpoint.split(':')[0], server_port: parseInt(endpoint.split(':')[1]), address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peers: [{ public_key: d1.peerPublicKey, allowed_ips: ["0.0.0.0/0", "::/0"], reserved: d1.reserved.slice(0, 3).join(',') }] }, null, 2);
-                    default: return '';
-                }
-            }
-            
-            function generateAllFormats(d1, d2, e1, e2) {
-                const v2rayUri = `wireguard://${encodeURIComponent(d1.privateKey)}@${e1}?publicKey=${encodeURIComponent(d1.peerPublicKey)}&address=${encodeURIComponent(`${d1.v4}/32,${d1.v6}/128`)}&mtu=1280&reserved=${encodeURIComponent(d1.reserved.slice(0, 3).join(','))}#Ultimate-WARP-Config`;
+            function generateAllFormats(d1, d2, endpoints) {
+                const e1 = endpoints[0];
+                const e2 = endpoints[1] || e1;
+
+                const v2rayUris = endpoints.map(ep => `wireguard://${encodeURIComponent(d1.privateKey)}@${ep}?publicKey=${encodeURIComponent(d1.peerPublicKey)}&address=${encodeURIComponent(`${d1.v4}/32,${d1.v6}/128`)}&mtu=1280&reserved=${encodeURIComponent(d1.reserved.slice(0, 3).join(','))}#WARP-${ep}`);
+
                 return {
                     standard: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
                     amnezia: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
                     clash: `proxies:\n- name: "WARP"\n  type: wireguard\n  server: ${e1.split(':')[0]}\n  port: ${e1.split(':')[1]}\n  ip: ${d1.v4}\n  public-key: ${d1.peerPublicKey}\n  private-key: ${d1.privateKey}\n  mtu: 1280\n  udp: true\n  reserved: [${d1.reserved[0]}, ${d1.reserved[1]}, ${d1.reserved[2]}]\n\n- name: "WARP-in-WARP"\n  type: wireguard\n  server: ${e2.split(':')[0]}\n  port: ${e2.split(':')[1]}\n  ip: ${d2.v4}\n  public-key: ${d2.peerPublicKey}\n  private-key: ${d2.privateKey}\n  mtu: 1280\n  udp: true\n  dialer-proxy: WARP\n  reserved: [${d2.reserved[0]}, ${d2.reserved[1]}, ${d2.reserved[2]}]`,
                     v2ray1: JSON.stringify({ tag: "WARP", type: "wireguard", server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), local_address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peer_public_key: d1.peerPublicKey, reserved: d1.reserved, mtu: 1280 }, null, 2),
                     v2ray2: JSON.stringify({ type: "wireguard", tag: "proxy", server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peers: [{ public_key: d1.peerPublicKey, allowed_ips: ["0.0.0.0/0", "::/0"], reserved: d1.reserved.slice(0, 3).join(',') }] }, null, 2),
-                    v2rayUri: v2rayUri
+                    v2rayUriList: v2rayUris.join('\n'),
+                    v2rayUriPreview: v2rayUris[0]
                 };
             }
 
@@ -143,35 +138,24 @@
                     { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
                     { id: "tab-amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
                     { id: "tab-clash", title: "Clash Format (WARP-in-WARP)", content: configs.clash, color: "teal" },
-                    { id: "tab-uri", title: "V2Ray URI (Shareable Link)", content: configs.v2rayUri, color: "blue" }
+                    { id: "tab-singbox", title: "sing-box Formats", multi: true, content1: configs.v2ray1, content2: configs.v2ray2 },
+                    { id: "tab-uri", title: "V2Ray URI List", content: configs.v2rayUriList, color: "blue" }
                 ];
                 let html = '';
                 for (const data of templates) {
-                    html += `<div id="${data.id}" class="tab-pane ${data.id !== 'tab-standard' ? 'hidden' : ''}">
-                        <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
-                        ${createActionButtons(data.content, data.color)}
-                        <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all"><code>${escapeHtml(data.content)}</code></pre>
-                    </div>`;
+                    if (data.multi) {
+                        html += `<div id="${data.id}" class="tab-pane hidden space-y-4">
+                            <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 1 (sing-box / v2fly)</h4>${createActionButtons(data.content1, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg"><code>${escapeHtml(data.content1)}</code></pre></div>
+                            <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 2 (Nekobox)</h4>${createActionButtons(data.content2, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg"><code>${escapeHtml(data.content2)}</code></pre></div>
+                        </div>`;
+                    } else {
+                        html += `<div id="${data.id}" class="tab-pane ${data.id !== 'tab-standard' ? 'hidden' : ''}">
+                            <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
+                            ${createActionButtons(data.content, data.color)}
+                            <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[400px]"><code>${escapeHtml(data.content)}</code></pre>
+                        </div>`;
+                    }
                 }
-                
-                let v2rayListHtml = `<div class="space-y-4">
-                    <h3 class="font-semibold text-lg text-orange-400">Endpoint List & Sharer</h3>`;
-                for (const endpoint of endpoints) {
-                    v2rayListHtml += `<div class="p-3 bg-gray-900 rounded-lg border border-gray-700">
-                        <p class="font-mono text-sm text-gray-300 mb-2">${endpoint}</p>
-                        <div class="flex space-x-2">
-                           <button class="share-btn flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg text-sm" data-share-format="v2ray1" data-share-endpoint="${endpoint}">Share sing-box</button>
-                           <button class="share-btn flex-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold py-1 px-3 rounded-lg text-sm" data-share-format="v2ray2" data-share-endpoint="${endpoint}">Share Nekobox</button>
-                        </div>
-                        <div class="share-result-container hidden mt-2">
-                           <input type="text" readonly class="w-full bg-gray-800 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
-                           <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
-                        </div>
-                    </div>`;
-                }
-                v2rayListHtml += `</div>`;
-                html += `<div id="tab-v2ray" class="tab-pane hidden max-h-[450px] overflow-y-auto pr-2">${v2rayListHtml}</div>`;
-                
                 tabContentArea.innerHTML = html;
             }
 
@@ -196,16 +180,11 @@
                     const endpoints = await fetchAllEndpoints();
                     const account1 = await fetchAccountFromWorker(1);
                     const account2 = await fetchAccountFromWorker(2);
-                    
                     fullConfigData = { account1, account2, endpoints };
                     setStatus("Generating UI...");
-                    
-                    const previewConfigs = generateAllFormats(account1, account2, endpoints[0], endpoints[1] || endpoints[0]);
-                    generatedConfigs = previewConfigs;
-                    
-                    populateUI(previewConfigs, endpoints);
-                    updateQrCode(previewConfigs.standard, 'QR Code (Standard WG)');
-                    
+                    generatedConfigs = generateAllFormats(account1, account2, endpoints);
+                    populateUI(generatedConfigs, endpoints);
+                    updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)');
                     if (resultsDiv.classList.contains('hidden')) {
                         resultsDiv.classList.remove('hidden');
                         setTimeout(() => { resultsDiv.style.opacity = 1; resultsDiv.style.transform = 'translateY(0)'; }, 10);
@@ -231,7 +210,7 @@
                     switch (button.dataset.tabTarget) {
                         case '#tab-standard': updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)'); break;
                         case '#tab-amnezia': updateQrCode(generatedConfigs.amnezia, 'QR Code (AmneziaWG)'); break;
-                        case '#tab-uri': updateQrCode(generatedConfigs.v2rayUri, 'QR Code (V2Ray URI)'); break;
+                        case '#tab-uri': updateQrCode(generatedConfigs.v2rayUriPreview, 'QR Code (First URI)'); break;
                         default: updateQrCode(null, 'QR Code (Not Scannable)'); break;
                     }
                 });
@@ -246,20 +225,13 @@
                     const originalText = button.innerHTML;
                     navigator.clipboard.writeText(textToCopy).then(() => { button.innerHTML = 'Copied!'; setTimeout(() => { button.innerHTML = originalText; }, 2000); });
                 } else if (button.classList.contains('share-btn')) {
-                    let contentToShare;
-                    if (button.dataset.shareEndpoint) {
-                        const endpoint = button.dataset.shareEndpoint;
-                        const format = button.dataset.shareFormat;
-                        contentToShare = generateConfigForEndpoint(fullConfigData.account1, endpoint, format);
-                    } else {
-                        contentToShare = unescape(button.dataset.shareContent);
-                    }
+                    const contentToShare = unescape(button.dataset.shareContent);
                     const originalText = button.innerHTML;
                     button.disabled = true; button.innerHTML = 'Sharing...';
                     try {
                         const result = await shzAl.uploadPaste(contentToShare, { expiration: '1h' });
                         const shareUrl = result.url;
-                        const container = button.closest('.p-3, .tab-pane').querySelector('.share-result-container');
+                        const container = button.closest('.tab-pane, .space-y-4 > div').querySelector('.share-result-container');
                         container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');
                     } catch (error) { console.error("Share failed:", error); alert("Failed to share config."); } finally { button.disabled = false; button.innerHTML = originalText; }

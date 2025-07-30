@@ -145,8 +145,8 @@
                 for (const data of templates) {
                     if (data.multi) {
                         html += `<div id="${data.id}" class="tab-pane hidden space-y-4">
-                            <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 1 (sing-box / v2fly)</h4>${createActionButtons(data.content1, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg"><code>${escapeHtml(data.content1)}</code></pre></div>
-                            <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 2 (Nekobox)</h4>${createActionButtons(data.content2, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg"><code>${escapeHtml(data.content2)}</code></pre></div>
+                        <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 1 (sing-box / v2fly)</h4>${createActionButtons(data.content1, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg max-h-[200px] overflow-x-auto break-all"><code>${escapeHtml(data.content1)}</code></pre></div>
+                        <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 2 (Nekobox)</h4>${createActionButtons(data.content2, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg max-h-[200px] overflow-x-auto break-all"><code>${escapeHtml(data.content2)}</code></pre></div>
                         </div>`;
                     } else {
                         html += `<div id="${data.id}" class="tab-pane ${data.id !== 'tab-standard' ? 'hidden' : ''}">

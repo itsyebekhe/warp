@@ -240,10 +240,12 @@
                     button.disabled = true; button.innerHTML = 'Sharing...';
                     try {
                         const result = await shzAl.uploadPaste(content, { expiration: '1h' });
+                        const pasteName = result.url.split('/').pop(); // CORRECTED LOGIC
+                        const shareUrl = shzAl.getDisplayPageUrl(pasteName);
                         const container = button.closest('.tab-pane, .space-y-4 > div').querySelector('.share-result-container');
-                        container.querySelector('input').value = shzAl.getDisplayPageUrl(result.name);
+                        container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');
-                    } catch (error) { alert("Failed to share config."); } finally { button.disabled = false; button.innerHTML = originalText; }
+                    } catch (error) { console.error("Share failed:", error); alert("Failed to share config."); } finally { button.disabled = false; button.innerHTML = originalText; }
                 } else if (button.classList.contains('copy-link-btn')) {
                     const linkToCopy = button.previousElementSibling.value;
                     const originalText = button.innerHTML;

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate WARP Generator & Sharer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        .gradient-text { background-image: linear-gradient(to right, #fb923c, #f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        body { background-color: #111827; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-5xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator & Sharer</h1>
+            <p class="text-gray-400 mt-2 text-lg">Generate, download, and share configs for any client.</p>
+        </div>
+
+        <div id="generate-section" class="text-center">
+            <button id="generateBtn" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out inline-flex items-center gap-3"></button>
+            <p id="statusText" class="text-gray-400 text-sm mt-4 h-5"></p>
+        </div>
+
+        <div id="results" class="hidden transition-all duration-500 ease-in-out">
+            <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 md:p-8 mt-8 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-6 text-white text-center">Your Configurations are Ready!</h2>
+                
+                <div class="text-center mb-8">
+                    <button id="downloadPackBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out inline-flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        Download Config Pack (.zip)
+                    </button>
+                    <p class="text-gray-400 text-sm mt-2">Contains 5 configs for Standard and AmneziaWG clients.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-bold mb-4 text-center text-gray-300">Configuration Preview & Sharing</h3>
+                        <div class="border-b border-gray-700 mb-4">
+                             <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-clash">Clash</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-v2ray">V2Ray/sing-box</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-uri">V2Ray URI</button>
+                            </nav>
+                        </div>
+                        <div id="tab-content-area"></div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center pt-6 lg:pt-0">
+                        <h3 class="font-semibold text-lg mb-2 text-orange-400">QR Code (Standard Config)</h3>
+                        <p class="text-gray-400 mb-4 text-sm text-center">Scan with the official WireGuard app.</p>
+                        <div id="qrcode" class="p-4 bg-white rounded-lg shadow-md"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ShzAlClient {
+            constructor(baseURL = 'https://shz.al') { this.baseURL = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL; }
+            async _handleResponse(response) { if (!response.ok) { const errorText = await response.text(); throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`); } return response; }
+            getDisplayPageUrl(name) { return `${this.baseURL}/d/${name}`; }
+            async uploadPaste(content, options = {}) {
+                const formData = new FormData();
+                formData.append('c', content);
+                if (options.expiration) formData.append('e', options.expiration);
+                const response = await fetch(this.baseURL + '/', { method: 'POST', body: formData });
+                await this._handleResponse(response);
+                return response.json();
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const shzAl = new ShzAlClient();
+            const generateBtn = document.getElementById('generateBtn'), statusText = document.getElementById('statusText'), resultsDiv = document.getElementById('results');
+            const downloadPackBtn = document.getElementById('downloadPackBtn'), qrcodeContainer = document.getElementById('qrcode');
+            const tabButtons = document.querySelectorAll('.tab-btn'), tabContentArea = document.getElementById('tab-content-area');
+            
+            const originalButtonHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Generate Config Pack`;
+            const loadingButtonHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...`;
+            generateBtn.innerHTML = originalButtonHTML;
+
+            let fullConfigData = {};
+
+            function setStatus(message) { statusText.textContent = message; }
+            const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
+            const extractKey = (data, keyName) => data.match(new RegExp(`${keyName}:\\s(.+)`))?.[1].trim() || null;
+
+            async function fetchAccountFromWorker(accountNum) {
+                setStatus(`Registering account ${accountNum}/2...`);
+                const keygenResponse = await fetch('https://keygen.warp-generator.workers.dev');
+                if (!keygenResponse.ok) throw new Error('Keygen failed');
+                const keyData = await keygenResponse.text();
+                const privateKey = extractKey(keyData, 'PrivateKey'), publicKey = extractKey(keyData, 'PublicKey');
+                const installId = generateRandomString(22);
+                const response = await fetch('https://www.warp-generator.workers.dev/wg', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: publicKey, install_id: installId, fcm_token: `${installId}:APA91b${generateRandomString(134)}`, tos: new Date().toISOString(), type: 'Android', locale: 'en_US' }),
+                });
+                if (!response.ok) throw new Error(`API Account failed: ${response.status}`);
+                const accountData = await response.json();
+                return { privateKey, v4: accountData.config.interface.addresses.v4, v6: accountData.config.interface.addresses.v6, peerPublicKey: accountData.config.peers[0].public_key, reserved: Array.from(atob(accountData.config.client_id)).map(c => c.charCodeAt(0)) };
+            }
+            
+            async function fetchTopEndpoints(count) {
+                setStatus("Fetching endpoint list...");
+                try {
+                    const response = await fetch('https://raw.githubusercontent.com/ircfspace/endpoint/main/ip.json');
+                    if (!response.ok) throw new Error('Endpoint list fetch failed');
+                    const text = await response.text();
+                    const data = JSON.parse(text.replace(/[\u200B-\u200D\uFEFF]/g, ''));
+                    return data.ipv4.sort(() => 0.5 - Math.random()).slice(0, count);
+                } catch (error) {
+                    setStatus("Endpoint fetch failed. Using random fallback.");
+                    return Array.from({length: count}, () => "162.159.192." + Math.floor(Math.random() * 256) + ":2408");
+                }
+            }
+            
+            function generateAllFormats(d1, d2, e1, e2) {
+                const v2rayUri = `wireguard://${encodeURIComponent(d1.privateKey)}@${e1}?publicKey=${encodeURIComponent(d1.peerPublicKey)}&address=${encodeURIComponent(`${d1.v4}/32,${d1.v6}/128`)}&mtu=1280&reserved=${encodeURIComponent(d1.reserved.slice(0, 3).join(','))}#Ultimate-WARP-Config`;
+                return {
+                    standard: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
+                    amnezia: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
+                    clash: `proxies:\n- name: "WARP"\n  type: wireguard\n  server: ${e1.split(':')[0]}\n  port: ${e1.split(':')[1]}\n  ip: ${d1.v4}\n  public-key: ${d1.peerPublicKey}\n  private-key: ${d1.privateKey}\n  mtu: 1280\n  udp: true\n  reserved: [${d1.reserved[0]}, ${d1.reserved[1]}, ${d1.reserved[2]}]\n\n- name: "WARP-in-WARP"\n  type: wireguard\n  server: ${e2.split(':')[0]}\n  port: ${e2.split(':')[1]}\n  ip: ${d2.v4}\n  public-key: ${d2.peerPublicKey}\n  private-key: ${d2.privateKey}\n  mtu: 1280\n  udp: true\n  dialer-proxy: WARP\n  reserved: [${d2.reserved[0]}, ${d2.reserved[1]}, ${d2.reserved[2]}]`,
+                    v2ray1: JSON.stringify({ tag: "WARP", type: "wireguard", server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), local_address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peer_public_key: d1.peerPublicKey, reserved: d1.reserved, mtu: 1280 }, null, 2),
+                    v2ray2: JSON.stringify({ type: "wireguard", tag: "proxy", server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peers: [{ public_key: d1.peerPublicKey, allowed_ips: ["0.0.0.0/0", "::/0"], reserved: d1.reserved.slice(0, 3).join(',') }] }, null, 2),
+                    v2rayUri: v2rayUri
+                };
+            }
+
+            function populatePreviewUI(configs) {
+                const templates = [
+                    { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
+                    { id: "tab-amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
+                    { id: "tab-clash", title: "Clash Format (WARP-in-WARP)", content: configs.clash, color: "teal" },
+                    { id: "tab-v2ray", title: "V2Ray / sing-box Formats", multi: true, content1: configs.v2ray1, content2: configs.v2ray2 },
+                    { id: "tab-uri", title: "V2Ray URI (Shareable Link)", content: configs.v2rayUri, color: "blue" }
+                ];
+                let html = '';
+                for (const data of templates) {
+                    if (data.multi) {
+                        html += `<div id="${data.id}" class="tab-pane hidden space-y-4">
+                            <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 1 (sing-box / v2fly)</h4>${createActionButtons(data.content1, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg"><code>${data.content1}</code></pre></div>
+                            <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 2 (Nekobox)</h4>${createActionButtons(data.content2, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg"><code>${data.content2}</code></pre></div>
+                        </div>`;
+                    } else {
+                        html += `<div id="${data.id}" class="tab-pane ${data.id !== 'tab-standard' ? 'hidden' : ''}">
+                            <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
+                            ${createActionButtons(data.content, data.color)}
+                            <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all"><code>${data.content}</code></pre>
+                        </div>`;
+                    }
+                }
+                tabContentArea.innerHTML = html;
+            }
+
+            function createActionButtons(content, color) {
+                return `<div class="flex space-x-2 mb-2">
+                            <button class="copy-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>
+                            <button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-share-content="${escape(content)}">Share via shz.al</button>
+                        </div>
+                        <div class="share-result-container hidden mt-2">
+                            <input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
+                            <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
+                        </div>`;
+            }
+
+            generateBtn.addEventListener('click', async () => {
+                generateBtn.disabled = true; generateBtn.innerHTML = loadingButtonHTML;
+                try {
+                    const endpoints = await fetchTopEndpoints(5);
+                    const account1 = await fetchAccountFromWorker(1);
+                    const account2 = await fetchAccountFromWorker(2);
+                    fullConfigData = { account1, account2, endpoints };
+                    setStatus("Generating preview...");
+                    const previewConfigs = generateAllFormats(account1, account2, endpoints[0], endpoints[1] || endpoints[0]);
+                    populatePreviewUI(previewConfigs);
+                    qrcodeContainer.innerHTML = ''; new QRCode(qrcodeContainer, { text: previewConfigs.standard, width: 220, height: 220 });
+                    if (resultsDiv.classList.contains('hidden')) {
+                        resultsDiv.classList.remove('hidden');
+                        setTimeout(() => { resultsDiv.style.opacity = 1; resultsDiv.style.transform = 'translateY(0)'; }, 10);
+                    }
+                    setStatus("Done!");
+                } catch (error) {
+                    console.error("Main generation process failed:", error); setStatus("An error occurred. Please try again.");
+                } finally {
+                    generateBtn.disabled = false; generateBtn.innerHTML = originalButtonHTML;
+                    setTimeout(() => setStatus(""), 3000);
+                }
+            });
+            
+            downloadPackBtn.addEventListener('click', () => {
+                const { account1, endpoints } = fullConfigData;
+                if (!account1 || !endpoints) { alert('Please generate configs first.'); return; }
+                const zip = new JSZip();
+                endpoints.forEach((ep, i) => {
+                    const sConf = `[Interface]\nPrivateKey = ${account1.privateKey}\nAddress = ${account1.v4}/32, ${account1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${account1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${ep}`;
+                    const aConf = `${sConf.split('\n\n')[0]}\nJc = 4\nJmin = 40\nJmax = 70\n\n${sConf.split('\n\n')[1]}`;
+                    zip.folder("standard").file(`WARP-${i+1}-${ep.replace(":", "_")}.conf`, sConf);
+                    zip.folder("amnezia").file(`Amnezia-${i+1}-${ep.replace(":", "_")}.conf`, aConf);
+                });
+                zip.generateAsync({type:"blob"}).then(content => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = "WARP-Config-Pack.zip";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            });
+            
+            const activeTabClasses = ['border-orange-500', 'text-orange-400'], inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove(...activeTabClasses) || btn.classList.add(...inactiveTabClasses));
+                    button.classList.add(...activeTabClasses) || button.classList.remove(...inactiveTabClasses);
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+                    document.querySelector(button.dataset.tabTarget).classList.remove('hidden');
+                });
+            });
+
+            tabContentArea.addEventListener('click', async e => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                
+                if (button.classList.contains('copy-btn')) {
+                    const textToCopy = unescape(button.dataset.clipboardText);
+                    const originalText = button.innerHTML;
+                    navigator.clipboard.writeText(textToCopy).then(() => { button.innerHTML = 'Copied!'; setTimeout(() => { button.innerHTML = originalText; }, 2000); });
+                } else if (button.classList.contains('share-btn')) {
+                    const content = unescape(button.dataset.shareContent);
+                    const originalText = button.innerHTML;
+                    button.disabled = true; button.innerHTML = 'Sharing...';
+                    try {
+                        const result = await shzAl.uploadPaste(content, { expiration: '1h' });
+                        const container = button.closest('.tab-pane, .space-y-4 > div').querySelector('.share-result-container');
+                        container.querySelector('input').value = shzAl.getDisplayPageUrl(result.name);
+                        container.classList.remove('hidden');
+                    } catch (error) { alert("Failed to share config."); } finally { button.disabled = false; button.innerHTML = originalText; }
+                } else if (button.classList.contains('copy-link-btn')) {
+                    const linkToCopy = button.previousElementSibling.value;
+                    const originalText = button.innerHTML;
+                    navigator.clipboard.writeText(linkToCopy).then(() => { button.innerHTML = 'Link Copied!'; setTimeout(() => { button.innerHTML = originalText; }, 2000); });
+                }
+            });
+
+            resultsDiv.style.opacity = 0; resultsDiv.style.transform = 'translateY(20px)';
+        });
+    </script>
+</body>
+</html>

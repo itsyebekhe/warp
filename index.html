@@ -53,9 +53,11 @@
                     </div>
                     
                     <div class="flex flex-col items-center justify-center pt-6 lg:pt-0">
-                        <h3 class="font-semibold text-lg mb-2 text-orange-400">QR Code (Standard Config)</h3>
-                        <p class="text-gray-400 mb-4 text-sm text-center">Scan with the official WireGuard app.</p>
-                        <div id="qrcode" class="p-4 bg-white rounded-lg shadow-md"></div>
+                        <h3 id="qrcode-title" class="font-semibold text-lg mb-2 text-orange-400"></h3>
+                        <div id="qrcode-wrapper" class="p-4 bg-white rounded-lg shadow-md">
+                            <div id="qrcode"></div>
+                            <p id="qrcode-message" class="hidden text-center text-gray-700 p-8 font-medium">This format is not suitable for QR code scanning.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,13 +82,14 @@
             const shzAl = new ShzAlClient();
             const generateBtn = document.getElementById('generateBtn'), statusText = document.getElementById('statusText'), resultsDiv = document.getElementById('results');
             const downloadPackBtn = document.getElementById('downloadPackBtn'), qrcodeContainer = document.getElementById('qrcode');
+            const qrcodeTitle = document.getElementById('qrcode-title'), qrcodeMessage = document.getElementById('qrcode-message');
             const tabButtons = document.querySelectorAll('.tab-btn'), tabContentArea = document.getElementById('tab-content-area');
             
             const originalButtonHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Generate Config Pack`;
             const loadingButtonHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...`;
             generateBtn.innerHTML = originalButtonHTML;
 
-            let fullConfigData = {};
+            let fullConfigData = {}, generatedConfigs = null;
 
             function setStatus(message) { statusText.textContent = message; }
             const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
@@ -134,6 +137,20 @@
                 };
             }
 
+            function updateQrCode(content, title) {
+                qrcodeTitle.textContent = title;
+                if (content) {
+                    qrcodeContainer.innerHTML = '';
+                    new QRCode(qrcodeContainer, { text: content, width: 200, height: 200 });
+                    qrcodeContainer.classList.remove('hidden');
+                    qrcodeMessage.classList.add('hidden');
+                } else {
+                    qrcodeContainer.innerHTML = '';
+                    qrcodeContainer.classList.add('hidden');
+                    qrcodeMessage.classList.remove('hidden');
+                }
+            }
+            
             function populatePreviewUI(configs) {
                 const templates = [
                     { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
@@ -179,9 +196,9 @@
                     const account2 = await fetchAccountFromWorker(2);
                     fullConfigData = { account1, account2, endpoints };
                     setStatus("Generating preview...");
-                    const previewConfigs = generateAllFormats(account1, account2, endpoints[0], endpoints[1] || endpoints[0]);
-                    populatePreviewUI(previewConfigs);
-                    qrcodeContainer.innerHTML = ''; new QRCode(qrcodeContainer, { text: previewConfigs.standard, width: 220, height: 220 });
+                    generatedConfigs = generateAllFormats(account1, account2, endpoints[0], endpoints[1] || endpoints[0]);
+                    populatePreviewUI(generatedConfigs);
+                    updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)'); // Initial QR
                     if (resultsDiv.classList.contains('hidden')) {
                         resultsDiv.classList.remove('hidden');
                         setTimeout(() => { resultsDiv.style.opacity = 1; resultsDiv.style.transform = 'translateY(0)'; }, 10);
@@ -206,12 +223,8 @@
                     zip.folder("amnezia").file(`Amnezia-${i+1}-${ep.replace(":", "_")}.conf`, aConf);
                 });
                 zip.generateAsync({type:"blob"}).then(content => {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(content);
-                    link.download = "WARP-Config-Pack.zip";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    const link = document.createElement('a'); link.href = URL.createObjectURL(content); link.download = "WARP-Config-Pack.zip";
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
                 });
             });
             
@@ -221,7 +234,17 @@
                     tabButtons.forEach(btn => btn.classList.remove(...activeTabClasses) || btn.classList.add(...inactiveTabClasses));
                     button.classList.add(...activeTabClasses) || button.classList.remove(...inactiveTabClasses);
                     document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
-                    document.querySelector(button.dataset.tabTarget).classList.remove('hidden');
+                    const targetPane = document.querySelector(button.dataset.tabTarget);
+                    if (targetPane) targetPane.classList.remove('hidden');
+
+                    if (!generatedConfigs) return;
+                    const tabId = button.dataset.tabTarget;
+                    switch (tabId) {
+                        case '#tab-standard': updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)'); break;
+                        case '#tab-amnezia': updateQrCode(generatedConfigs.amnezia, 'QR Code (AmneziaWG)'); break;
+                        case '#tab-uri': updateQrCode(generatedConfigs.v2rayUri, 'QR Code (V2Ray URI)'); break;
+                        case '#tab-clash': case '#tab-v2ray': updateQrCode(null, 'QR Code (Not Scannable)'); break;
+                    }
                 });
             });
 
@@ -239,7 +262,7 @@
                     button.disabled = true; button.innerHTML = 'Sharing...';
                     try {
                         const result = await shzAl.uploadPaste(content, { expiration: '1h' });
-                        const shareUrl = result.url; // CORRECTED LOGIC: Use the raw URL directly
+                        const shareUrl = result.url;
                         const container = button.closest('.tab-pane, .space-y-4 > div').querySelector('.share-result-container');
                         container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');

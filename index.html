@@ -254,7 +254,16 @@
                     switch (button.dataset.tabTarget) {
                         case '#tab-standard': updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)'); break;
                         case '#tab-amnezia': updateQrCode(generatedConfigs.amnezia, 'QR Code (AmneziaWG)'); break;
-                        case '#tab-singbox':
+                        case '#tab-singbox': {
+                            // Check if a share URL has already been generated for singbox
+                            const singboxShareInput = document.querySelector('#tab-singbox .share-result-container input');
+                            if (singboxShareInput && singboxShareInput.value) {
+                                updateQrCode(singboxShareInput.value, 'sing-box Share Link QR');
+                            } else {
+                                updateQrCode(null, 'QR Code (Not Scannable)');
+                            }
+                            break;
+                        }
                         default: updateQrCode(null, 'QR Code (Not Scannable)'); break;
                     }
                 });
@@ -262,7 +271,7 @@
 
             document.getElementById('tab-content-area').addEventListener('click', async e => {
                 const button = e.target.closest('button');
-                // CORRECTED: This simple check is all that's needed.
+                // This simple check is correct. It ensures we only process clicks on actual buttons.
                 if (!button) return;
                 
                 if (button.classList.contains('copy-btn')) {
@@ -280,7 +289,6 @@
                         container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');
                         
-                        // If the share button was in the singbox tab, update the main QR code with the share URL
                         const parentPane = button.closest('.tab-pane');
                         if (parentPane && parentPane.id === 'tab-singbox') {
                             updateQrCode(shareUrl, 'sing-box Share Link QR');

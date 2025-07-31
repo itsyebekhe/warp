@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Library to convert Markdown to HTML -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         .gradient-text { background-image: linear-gradient(to right, #fb923c, #f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -31,6 +32,7 @@
         <div class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator</h1>
             <p class="text-gray-400 mt-2 text-lg">Generate shareable configs for any client.</p>
+            <!-- "How to Use" Button -->
             <button id="howToUseBtn" class="mt-4 text-orange-400 border border-orange-400/50 hover:bg-orange-400/10 font-semibold py-2 px-4 rounded-lg transition-colors">
                 راهنمای استفاده (How to Use)
             </button>
@@ -49,7 +51,7 @@
                     <div class="lg:col-span-2">
                         <h3 class="text-xl font-bold mb-4 text-center text-gray-300">Configuration Preview & Sharing</h3>
                         <div class="border-b border-gray-700 mb-4">
-                            <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                             <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
                                 <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
                                 <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
                                 <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">Sing-Box</button>
@@ -70,6 +72,7 @@
         </div>
     </div>
 
+    <!-- How to Use Modal Structure -->
     <div id="howToUseModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between p-4 border-b border-gray-700">
@@ -77,7 +80,8 @@
                 <button id="closeModalBtn" class="text-gray-400 hover:text-white">×</button>
             </div>
             <div id="howToUseContent" class="p-6 overflow-y-auto markdown-content" dir="rtl">
-                </div>
+                <!-- Content from readme.md will be injected here -->
+            </div>
         </div>
     </div>
 
@@ -163,10 +167,10 @@
             function generateAllFormats(account, endpoints) {
                 const primaryEndpoint = endpoints[0];
                 const singboxTemplate = {
-                    "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
-                    "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
-                    "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ],
-                    "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
+                  "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
+                  "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
+                  "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ],
+                  "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
                 };
                 const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
                 endpoints.forEach(ep => {
@@ -241,18 +245,18 @@
 
                 // Use TailwindCSS's JIT compiler to recognize these classes: bg-blue-600 hover:bg-blue-700, bg-purple-600 hover:bg-purple-700, bg-teal-600 hover:bg-teal-700
                 let buttonsHtml = `<div class="flex space-x-2 mb-2">
-                                    <button class="copy-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>`;
+                            <button class="copy-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>`;
                 
                 if (hasDownload) {
                     buttonsHtml += `<button class="download-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-download-content="${escape(content)}" data-filename="${filename}">Download .conf</button>`;
                 }
-                                
+                            
                 buttonsHtml += `<button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-share-content="${escape(content)}">Share Link</button>
-                                </div>
-                                <div class="share-result-container hidden mt-2">
-                                    <input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
-                                    <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
-                                </div>`;
+                        </div>
+                        <div class="share-result-container hidden mt-2">
+                            <input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
+                            <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
+                        </div>`;
                 return buttonsHtml;
             }
 

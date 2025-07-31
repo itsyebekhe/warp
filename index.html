@@ -231,7 +231,7 @@
                 templates.forEach(data => {
                     html += `<div id="tab-${data.id}" class="tab-pane ${data.id !== 'standard' ? 'hidden' : ''}">
                         <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
-                        ${createActionButtons(data.content, data.color)}
+                        ${createActionButtons(data.content, data.color, data.id)}
                         <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[300px]"><code>${escapeHtml(data.content)}</code></pre>
                         ${createDownloadLinks(data.id)}
                     </div>`;
@@ -239,15 +239,25 @@
                 tabContentArea.innerHTML = html;
             }
 
-            function createActionButtons(content, color) {
-                return `<div class="flex space-x-2 mb-2">
-                            <button class="copy-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>
-                            <button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-share-content="${escape(content)}">Share via shz.al</button>
+            function createActionButtons(content, color, id) {
+                const hasDownload = id === 'standard' || id === 'amnezia';
+                const filename = id === 'standard' ? 'wg-config.conf' : 'amnezia-config.conf';
+
+                // Use TailwindCSS's JIT compiler to recognize these classes: bg-blue-600 hover:bg-blue-700, bg-purple-600 hover:bg-purple-700, bg-teal-600 hover:bg-teal-700
+                let buttonsHtml = `<div class="flex space-x-2 mb-2">
+                            <button class="copy-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>`;
+                
+                if (hasDownload) {
+                    buttonsHtml += `<button class="download-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-download-content="${escape(content)}" data-filename="${filename}">Download .conf</button>`;
+                }
+                            
+                buttonsHtml += `<button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-share-content="${escape(content)}">Share Link</button>
                         </div>
                         <div class="share-result-container hidden mt-2">
                             <input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
                             <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
                         </div>`;
+                return buttonsHtml;
             }
 
             function escapeHtml(text) { return text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">"); }
@@ -275,8 +285,9 @@
             });
             
             const activeTabClasses = ['border-orange-500', 'text-orange-400'], inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
-            document.querySelectorAll('.tab-btn').forEach(button => {
-                button.addEventListener('click', () => {
+            document.body.addEventListener('click', e => { // Changed to body to catch tab buttons as well
+                if (e.target.classList.contains('tab-btn')) {
+                    const button = e.target;
                     document.querySelectorAll('.tab-btn').forEach(btn => {
                         btn.classList.remove(...activeTabClasses);
                         btn.classList.add(...inactiveTabClasses);
@@ -301,7 +312,7 @@
                         }
                         default: updateQrCode(null, 'QR Code (Not Scannable)'); break;
                     }
-                });
+                }
             });
 
             document.getElementById('tab-content-area').addEventListener('click', async e => {
@@ -312,6 +323,17 @@
                     const textToCopy = unescape(button.dataset.clipboardText);
                     const originalText = button.innerHTML;
                     navigator.clipboard.writeText(textToCopy).then(() => { button.innerHTML = 'Copied!'; setTimeout(() => { button.innerHTML = originalText; }, 2000); });
+                } else if (button.classList.contains('download-btn')) {
+                    const content = unescape(button.dataset.downloadContent);
+                    const filename = button.dataset.filename;
+                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    document.body.appendChild(a); // Required for Firefox
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    document.body.removeChild(a);
                 } else if (button.classList.contains('share-btn')) {
                     const contentToShare = unescape(button.dataset.shareContent);
                     const originalText = button.innerHTML;

@@ -3,21 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate WARP Generator & Sharer</title>
+    <title>Ultimate WARP Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         .gradient-text { background-image: linear-gradient(to right, #fb923c, #f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
         body { background-color: #111827; }
+        /* Styles for the rendered Markdown content inside the modal */
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: bold; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+        .markdown-content h1 { font-size: 1.875rem; line-height: 2.25rem; border-bottom: 1px solid #4b5563; padding-bottom: 0.5rem;}
+        .markdown-content h2 { font-size: 1.5rem; line-height: 2rem; }
+        .markdown-content h3 { font-size: 1.25rem; line-height: 1.75rem; }
+        .markdown-content p, .markdown-content ul, .markdown-content ol { margin-bottom: 1rem; line-height: 1.75; }
+        .markdown-content ul, .markdown-content ol { list-style-position: inside; }
+        .markdown-content ul { list-style-type: disc; }
+        .markdown-content ol { list-style-type: decimal; }
+        .markdown-content a { color: #fb923c; text-decoration: underline; }
+        .markdown-content code { background-color: #1f2937; color: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; }
+        .markdown-content strong { color: #f9fafb; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-5xl">
         <div class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator & Sharer</h1>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator</h1>
             <p class="text-gray-400 mt-2 text-lg">Generate shareable configs for any client.</p>
+            <button id="howToUseBtn" class="mt-4 text-orange-400 border border-orange-400/50 hover:bg-orange-400/10 font-semibold py-2 px-4 rounded-lg transition-colors">
+                راهنمای استفاده (How to Use)
+            </button>
         </div>
 
         <div id="generate-section" class="text-center">
@@ -33,12 +49,10 @@
                     <div class="lg:col-span-2">
                         <h3 class="text-xl font-bold mb-4 text-center text-gray-300">Configuration Preview & Sharing</h3>
                         <div class="border-b border-gray-700 mb-4">
-                             <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-clash">Clash</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-singbox">sing-box</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-uri">V2Ray URI List</button>
+                            <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                                <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
+                                <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
+                                <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">Sing-Box</button>
                             </nav>
                         </div>
                         <div id="tab-content-area"></div>
@@ -53,6 +67,17 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="howToUseModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-700">
+                <h2 class="text-xl font-bold text-white">راهنمای استفاده</h2>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-white">×</button>
+            </div>
+            <div id="howToUseContent" class="p-6 overflow-y-auto markdown-content" dir="rtl">
+                </div>
         </div>
     </div>
 
@@ -88,20 +113,25 @@
             const shzAl = new ShzAlClient();
             const generateBtn = document.getElementById('generateBtn'), statusText = document.getElementById('statusText'), resultsDiv = document.getElementById('results');
             const qrcodeContainer = document.getElementById('qrcode'), qrcodeTitle = document.getElementById('qrcode-title'), qrcodeMessage = document.getElementById('qrcode-message');
-            const tabButtons = document.querySelectorAll('.tab-btn'), tabContentArea = document.getElementById('tab-content-area');
             
+            // Modal elements
+            const howToUseBtn = document.getElementById('howToUseBtn');
+            const howToUseModal = document.getElementById('howToUseModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const howToUseContent = document.getElementById('howToUseContent');
+
             const originalButtonHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Generate All Configs`;
             const loadingButtonHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...`;
             generateBtn.innerHTML = originalButtonHTML;
 
-            let fullConfigData = {}, generatedConfigs = null;
+            let generatedConfigs = null;
 
             function setStatus(message) { statusText.textContent = message; }
             const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
             const extractKey = (data, keyName) => data.match(new RegExp(`${keyName}:\\s(.+)`))?.[1].trim() || null;
 
-            async function fetchAccountFromWorker(accountNum) {
-                setStatus(`Registering account ${accountNum}/2...`);
+            async function fetchAccountFromWorker() {
+                setStatus(`Registering WARP account...`);
                 const keygenResponse = await fetch('https://keygen.warp-generator.workers.dev');
                 if (!keygenResponse.ok) throw new Error('Keygen failed');
                 const keyData = await keygenResponse.text();
@@ -130,74 +160,112 @@
                 }
             }
             
-            function generateAllFormats(d1, d2, endpoints) {
-                const e1 = endpoints[0];
-                const e2 = endpoints[1] || e1;
-
-                const v2rayUris = endpoints.map(ep => `wireguard://${encodeURIComponent(d1.privateKey)}@${ep}?publicKey=${encodeURIComponent(d1.peerPublicKey)}&address=${encodeURIComponent(`${d1.v4}/32,${d1.v6}/128`)}&mtu=1280&reserved=${encodeURIComponent(d1.reserved.slice(0, 3).join(','))}#WARP-${ep}`);
-
+            function generateAllFormats(account, endpoints) {
+                const primaryEndpoint = endpoints[0];
+                const singboxTemplate = {
+                    "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
+                    "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
+                    "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ],
+                    "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
+                };
+                const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
+                endpoints.forEach(ep => {
+                    const [server, port] = ep.split(':');
+                    const outboundTag = `WARP-${server}`;
+                    const wireguardOutbound = { "type": "wireguard", "tag": outboundTag, "server": server, "server_port": parseInt(port), "local_address": [`${account.v4}/32`, `${account.v6}/128`], "private_key": account.privateKey, "peer_public_key": account.peerPublicKey, "reserved": account.reserved, "mtu": 1280 };
+                    singboxTemplate.outbounds.push(wireguardOutbound);
+                    if (urltestOutbound) { urltestOutbound.outbounds.push(outboundTag); }
+                });
                 return {
-                    standard: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
-                    amnezia: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
-                    clash: `proxies:\n- name: "WARP"\n  type: wireguard\n  server: ${e1.split(':')[0]}\n  port: ${e1.split(':')[1]}\n  ip: ${d1.v4}\n  public-key: ${d1.peerPublicKey}\n  private-key: ${d1.privateKey}\n  mtu: 1280\n  udp: true\n  reserved: [${d1.reserved[0]}, ${d1.reserved[1]}, ${d1.reserved[2]}]\n\n- name: "WARP-in-WARP"\n  type: wireguard\n  server: ${e2.split(':')[0]}\n  port: ${e2.split(':')[1]}\n  ip: ${d2.v4}\n  public-key: ${d2.peerPublicKey}\n  private-key: ${d2.privateKey}\n  mtu: 1280\n  udp: true\n  dialer-proxy: WARP\n  reserved: [${d2.reserved[0]}, ${d2.reserved[1]}, ${d2.reserved[2]}]`,
-                    v2ray1: JSON.stringify({ tag: "WARP", type: "wireguard", server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), local_address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peer_public_key: d1.peerPublicKey, reserved: d1.reserved, mtu: 1280 }, null, 2),
-                    v2ray2: JSON.stringify({ type: "wireguard", tag: "proxy", server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peers: [{ public_key: d1.peerPublicKey, allowed_ips: ["0.0.0.0/0", "::/0"], reserved: d1.reserved.slice(0, 3).join(',') }] }, null, 2),
-                    v2rayUriList: v2rayUris.join('\n'),
-                    v2rayUriPreview: v2rayUris[0]
+                    standard: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${account.v4}/32, ${account.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${primaryEndpoint}`,
+                    amnezia: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${account.v4}/32, ${account.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${primaryEndpoint}`,
+                    singbox: JSON.stringify(singboxTemplate, null, 2)
                 };
             }
 
-            function populateUI(configs, endpoints) {
+            function createDownloadLinks(clientType) {
+                const links = {
+                    standard: [
+                        { name: 'Windows', url: 'https://download.wireguard.com/windows-client/wireguard-installer.exe' },
+                        { name: 'Android', url: 'https://play.google.com/store/apps/details?id=com.wireguard.android' },
+                        { name: 'iOS', url: 'https://apps.apple.com/us/app/wireguard/id1441195209' },
+                        { name: 'Linux', url: 'https://www.wireguard.com/install/' },
+                    ],
+                    amnezia: [
+                        { name: 'Windows', url: 'https://github.com/amnezia-vpn/amneziawg-windows-client/releases/latest' },
+                        { name: 'Android', url: 'https://play.google.com/store/apps/details?id=org.amnezia.awg&hl=fa' },
+                        { name: 'iOS', url: 'https://apps.apple.com/de/app/amneziawg/id6478942365' },
+                        { name: 'Linux', url: 'https://github.com/amnezia-vpn/amneziawg-linux-kernel-module' },
+                    ],
+                    singbox: [
+                        { name: 'Windows (Hiddify)', url: 'https://github.com/hiddify/hiddify-app/releases/latest' },
+                        { name: 'Android', url: 'https://github.com/SagerNet/sing-box-for-android/releases/latest' },
+                        { name: 'iOS', url: 'https://apps.apple.com/us/app/sing-box-vt/id6673731168' },
+                        { name: 'Linux (Core)', url: 'https://github.com/SagerNet/sing-box/releases/latest' },
+                    ]
+                };
+                const clientLinks = links[clientType];
+                if (!clientLinks) return '';
+                let linksHtml = '<div class="mt-6 pt-4 border-t border-gray-700">';
+                linksHtml += '<h4 class="text-sm font-semibold text-gray-400 mb-3 text-center">Download a Compatible Client:</h4>';
+                linksHtml += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">';
+                clientLinks.forEach(link => {
+                    linksHtml += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="block bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors">${link.name}</a>`;
+                });
+                linksHtml += '</div></div>';
+                return linksHtml;
+            }
+
+            function populateUI(configs) {
+                const tabContentArea = document.getElementById('tab-content-area');
                 const templates = [
-                    { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
-                    { id: "tab-amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
-                    { id: "tab-clash", title: "Clash Format (WARP-in-WARP)", content: configs.clash, color: "teal" },
-                    { id: "tab-singbox", title: "sing-box Formats", multi: true, content1: configs.v2ray1, content2: configs.v2ray2 },
-                    { id: "tab-uri", title: "V2Ray URI List", content: configs.v2rayUriList, color: "blue" }
+                    { id: "standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
+                    { id: "amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
+                    { id: "singbox", title: "sing-box Format (URL-Test)", content: configs.singbox, color: "teal" }
                 ];
                 let html = '';
-                for (const data of templates) {
-                    if (data.multi) {
-                        html += `<div id="${data.id}" class="tab-pane hidden space-y-4">
-                        <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 1 (sing-box / v2fly)</h4>${createActionButtons(data.content1, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg max-h-[200px] overflow-x-auto break-all"><code>${escapeHtml(data.content1)}</code></pre></div>
-                        <div><h4 class="font-semibold text-md mb-1 text-gray-300">Format 2 (Nekobox)</h4>${createActionButtons(data.content2, 'blue')} <pre class="bg-gray-900 p-4 rounded-lg max-h-[200px] overflow-x-auto break-all"><code>${escapeHtml(data.content2)}</code></pre></div>
-                        </div>`;
-                    } else {
-                        html += `<div id="${data.id}" class="tab-pane ${data.id !== 'tab-standard' ? 'hidden' : ''}">
-                            <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
-                            ${createActionButtons(data.content, data.color)}
-                            <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[400px]"><code>${escapeHtml(data.content)}</code></pre>
-                        </div>`;
-                    }
-                }
+                templates.forEach(data => {
+                    html += `<div id="tab-${data.id}" class="tab-pane ${data.id !== 'standard' ? 'hidden' : ''}">
+                        <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
+                        ${createActionButtons(data.content, data.color, data.id)}
+                        <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[300px]"><code>${escapeHtml(data.content)}</code></pre>
+                        ${createDownloadLinks(data.id)}
+                    </div>`;
+                });
                 tabContentArea.innerHTML = html;
             }
 
-            function createActionButtons(content, color) {
-                return `<div class="flex space-x-2 mb-2">
-                            <button class="copy-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>
-                            <button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-share-content="${escape(content)}">Share via shz.al</button>
-                        </div>
-                        <div class="share-result-container hidden mt-2">
-                            <input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
-                            <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
-                        </div>`;
+            function createActionButtons(content, color, id) {
+                const hasDownload = id === 'standard' || id === 'amnezia';
+                const filename = id === 'standard' ? 'wg-config.conf' : 'amnezia-config.conf';
+
+                // Use TailwindCSS's JIT compiler to recognize these classes: bg-blue-600 hover:bg-blue-700, bg-purple-600 hover:bg-purple-700, bg-teal-600 hover:bg-teal-700
+                let buttonsHtml = `<div class="flex space-x-2 mb-2">
+                                    <button class="copy-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>`;
+                
+                if (hasDownload) {
+                    buttonsHtml += `<button class="download-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-download-content="${escape(content)}" data-filename="${filename}">Download .conf</button>`;
+                }
+                                
+                buttonsHtml += `<button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-share-content="${escape(content)}">Share Link</button>
+                                </div>
+                                <div class="share-result-container hidden mt-2">
+                                    <input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300">
+                                    <button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">Copy Link</button>
+                                </div>`;
+                return buttonsHtml;
             }
 
-            function escapeHtml(text) {
-                return text.replace(/</g, "<").replace(/>/g, ">");
-            }
+            function escapeHtml(text) { return text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">"); }
 
             generateBtn.addEventListener('click', async () => {
                 generateBtn.disabled = true; generateBtn.innerHTML = loadingButtonHTML;
                 try {
                     const endpoints = await fetchAllEndpoints();
-                    const account1 = await fetchAccountFromWorker(1);
-                    const account2 = await fetchAccountFromWorker(2);
-                    fullConfigData = { account1, account2, endpoints };
+                    const account = await fetchAccountFromWorker();
                     setStatus("Generating UI...");
-                    generatedConfigs = generateAllFormats(account1, account2, endpoints);
-                    populateUI(generatedConfigs, endpoints);
+                    generatedConfigs = generateAllFormats(account, endpoints);
+                    populateUI(generatedConfigs);
                     updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)');
                     if (resultsDiv.classList.contains('hidden')) {
                         resultsDiv.classList.remove('hidden');
@@ -213,10 +281,15 @@
             });
             
             const activeTabClasses = ['border-orange-500', 'text-orange-400'], inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove(...activeTabClasses) || btn.classList.add(...inactiveTabClasses));
-                    button.classList.add(...activeTabClasses) || button.classList.remove(...inactiveTabClasses);
+            document.body.addEventListener('click', e => { // Changed to body to catch tab buttons as well
+                if (e.target.classList.contains('tab-btn')) {
+                    const button = e.target;
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove(...activeTabClasses);
+                        btn.classList.add(...inactiveTabClasses);
+                    });
+                    button.classList.add(...activeTabClasses);
+                    button.classList.remove(...inactiveTabClasses);
                     document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
                     document.querySelector(button.dataset.tabTarget).classList.remove('hidden');
 
@@ -224,13 +297,21 @@
                     switch (button.dataset.tabTarget) {
                         case '#tab-standard': updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)'); break;
                         case '#tab-amnezia': updateQrCode(generatedConfigs.amnezia, 'QR Code (AmneziaWG)'); break;
-                        case '#tab-uri': updateQrCode(generatedConfigs.v2rayUriPreview, 'QR Code (First URI)'); break;
+                        case '#tab-singbox': {
+                            const singboxShareInput = document.querySelector('#tab-singbox .share-result-container input');
+                            if (singboxShareInput && singboxShareInput.value) {
+                                updateQrCode(singboxShareInput.value, 'sing-box Share Link QR');
+                            } else {
+                                updateQrCode(null, 'QR Code (Not Scannable)');
+                            }
+                            break;
+                        }
                         default: updateQrCode(null, 'QR Code (Not Scannable)'); break;
                     }
-                });
+                }
             });
 
-            tabContentArea.addEventListener('click', async e => {
+            document.getElementById('tab-content-area').addEventListener('click', async e => {
                 const button = e.target.closest('button');
                 if (!button) return;
                 
@@ -238,6 +319,17 @@
                     const textToCopy = unescape(button.dataset.clipboardText);
                     const originalText = button.innerHTML;
                     navigator.clipboard.writeText(textToCopy).then(() => { button.innerHTML = 'Copied!'; setTimeout(() => { button.innerHTML = originalText; }, 2000); });
+                } else if (button.classList.contains('download-btn')) {
+                    const content = unescape(button.dataset.downloadContent);
+                    const filename = button.dataset.filename;
+                    const blob = new Blob([content], { type: 'application/octet-stream' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    document.body.appendChild(a); // Required for Firefox
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    document.body.removeChild(a);
                 } else if (button.classList.contains('share-btn')) {
                     const contentToShare = unescape(button.dataset.shareContent);
                     const originalText = button.innerHTML;
@@ -245,9 +337,15 @@
                     try {
                         const result = await shzAl.uploadPaste(contentToShare, { expiration: '1h' });
                         const shareUrl = result.url;
-                        const container = button.closest('.tab-pane, .space-y-4 > div').querySelector('.share-result-container');
+                        const container = button.closest('.tab-pane').querySelector('.share-result-container');
                         container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');
+                        
+                        const parentPane = button.closest('.tab-pane');
+                        if (parentPane && parentPane.id === 'tab-singbox') {
+                            updateQrCode(shareUrl, 'sing-box Share Link QR');
+                        }
+
                     } catch (error) { console.error("Share failed:", error); alert("Failed to share config."); } finally { button.disabled = false; button.innerHTML = originalText; }
                 } else if (button.classList.contains('copy-link-btn')) {
                     const linkToCopy = button.previousElementSibling.value;
@@ -260,7 +358,7 @@
                 qrcodeTitle.textContent = title;
                 if (content) {
                     qrcodeContainer.innerHTML = '';
-                    new QRCode(qrcodeContainer, { text: content, width: 200, height: 200 });
+                    new QRCode(qrcodeContainer, { text: content, width: 200, height: 200, correctLevel : QRCode.CorrectLevel.L });
                     qrcodeContainer.classList.remove('hidden');
                     qrcodeMessage.classList.add('hidden');
                 } else {
@@ -269,6 +367,46 @@
                     qrcodeMessage.classList.remove('hidden');
                 }
             }
+
+            // --- Modal Logic ---
+            howToUseBtn.addEventListener('click', () => {
+                // Fetch the content from readme.md
+                fetch('https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.md')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('readme.md not found.');
+                        }
+                        return response.text();
+                    })
+                    .then(markdown => {
+                        // Use the 'marked' library to convert markdown to HTML
+                        howToUseContent.innerHTML = marked.parse(markdown);
+                        howToUseModal.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching readme:', error);
+                        howToUseContent.innerHTML = `<p class="text-red-400">Error: Could not load the help file (readme.md).</p>`;
+                        howToUseModal.classList.remove('hidden');
+                    });
+            });
+
+            function closeModal() {
+                howToUseModal.classList.add('hidden');
+            }
+
+            closeModalBtn.addEventListener('click', closeModal);
+            howToUseModal.addEventListener('click', (e) => {
+                // Close modal if the outer background is clicked
+                if (e.target === howToUseModal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === "Escape" && !howToUseModal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+
 
             resultsDiv.style.opacity = 0; resultsDiv.style.transform = 'translateY(20px)';
         });

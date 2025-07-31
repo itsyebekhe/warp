@@ -326,7 +326,7 @@
                 } else if (button.classList.contains('download-btn')) {
                     const content = unescape(button.dataset.downloadContent);
                     const filename = button.dataset.filename;
-                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    const blob = new Blob([content], { type: 'application/octet-stream' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
                     a.download = filename;

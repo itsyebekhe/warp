@@ -92,14 +92,14 @@
             const loadingButtonHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...`;
             generateBtn.innerHTML = originalButtonHTML;
 
-            let fullConfigData = {}, generatedConfigs = null;
+            let generatedConfigs = null;
 
             function setStatus(message) { statusText.textContent = message; }
             const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
             const extractKey = (data, keyName) => data.match(new RegExp(`${keyName}:\\s(.+)`))?.[1].trim() || null;
 
-            async function fetchAccountFromWorker(accountNum) {
-                setStatus(`Registering account ${accountNum}/2...`);
+            async function fetchAccountFromWorker() {
+                setStatus(`Registering WARP account...`);
                 const keygenResponse = await fetch('https://keygen.warp-generator.workers.dev');
                 if (!keygenResponse.ok) throw new Error('Keygen failed');
                 const keyData = await keygenResponse.text();
@@ -128,29 +128,39 @@
                 }
             }
             
-            function generateAllFormats(d1, d2, endpoints) {
-                const e1 = endpoints[0];
-                const e2 = endpoints[1] || e1;
+            function generateAllFormats(account, endpoints) {
+                const primaryEndpoint = endpoints[0];
 
+                // --- sing-box Configuration ---
                 const singboxTemplate = {
                   "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
                   "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
                   "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ],
                   "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
                 };
-
-                const warp1_sb = { type: "wireguard", tag: `WARP-${e1.split(':')[0]}`, server: e1.split(':')[0], server_port: parseInt(e1.split(':')[1]), local_address: [`${d1.v4}/32`, `${d1.v6}/128`], private_key: d1.privateKey, peer_public_key: d1.peerPublicKey, reserved: d1.reserved, mtu: 1280 };
-                const warp2_sb = { type: "wireguard", tag: `WARP-${e2.split(':')[0]}`, server: e2.split(':')[0], server_port: parseInt(e2.split(':')[1]), local_address: [`${d2.v4}/32`, `${d2.v6}/128`], private_key: d2.privateKey, peer_public_key: d2.peerPublicKey, reserved: d2.reserved, mtu: 1280 };
                 
                 const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
-                if (urltestOutbound) {
-                    urltestOutbound.outbounds.push(warp1_sb.tag, warp2_sb.tag);
-                }
-                singboxTemplate.outbounds.push(warp1_sb, warp2_sb);
+                endpoints.slice(0, 5).forEach(ep => {
+                    const warpOutbound = {
+                        type: "wireguard",
+                        tag: `WARP-${ep.split(':')[0]}`,
+                        server: ep.split(':')[0],
+                        server_port: parseInt(ep.split(':')[1]),
+                        local_address: [`${account.v4}/32`, `${account.v6}/128`],
+                        private_key: account.privateKey,
+                        peer_public_key: account.peerPublicKey,
+                        reserved: account.reserved,
+                        mtu: 1280
+                    };
+                    singboxTemplate.outbounds.push(warpOutbound);
+                    if (urltestOutbound) {
+                        urltestOutbound.outbounds.push(warpOutbound.tag);
+                    }
+                });
                 
                 return {
-                    standard: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
-                    amnezia: `[Interface]\nPrivateKey = ${d1.privateKey}\nAddress = ${d1.v4}/32, ${d1.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${d1.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${e1}`,
+                    standard: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${account.v4}/32, ${account.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${primaryEndpoint}`,
+                    amnezia: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${account.v4}/32, ${account.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${primaryEndpoint}`,
                     singbox: JSON.stringify(singboxTemplate, null, 2)
                 };
             }
@@ -159,7 +169,7 @@
                 const templates = [
                     { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
                     { id: "tab-amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
-                    { id: "tab-singbox", title: "sing-box Format", content: configs.singbox, color: "teal" }
+                    { id: "tab-singbox", title: "sing-box Format (URL-Test)", content: configs.singbox, color: "teal" }
                 ];
                 let html = '';
                 for (const data of templates) {
@@ -183,17 +193,15 @@
                         </div>`;
             }
 
-            function escapeHtml(text) { return text.replace(/</g, "<").replace(/>/g, ">"); }
+            function escapeHtml(text) { return text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">"); }
 
             generateBtn.addEventListener('click', async () => {
                 generateBtn.disabled = true; generateBtn.innerHTML = loadingButtonHTML;
                 try {
                     const endpoints = await fetchAllEndpoints();
-                    const account1 = await fetchAccountFromWorker(1);
-                    const account2 = await fetchAccountFromWorker(2);
-                    fullConfigData = { account1, account2, endpoints };
+                    const account = await fetchAccountFromWorker();
                     setStatus("Generating UI...");
-                    generatedConfigs = generateAllFormats(account1, account2, endpoints);
+                    generatedConfigs = generateAllFormats(account, endpoints);
                     populateUI(generatedConfigs);
                     updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)');
                     if (resultsDiv.classList.contains('hidden')) {
@@ -210,10 +218,14 @@
             });
             
             const activeTabClasses = ['border-orange-500', 'text-orange-400'], inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
-            tabButtons.forEach(button => {
+            document.querySelectorAll('.tab-btn').forEach(button => {
                 button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove(...activeTabClasses) || btn.classList.add(...inactiveTabClasses));
-                    button.classList.add(...activeTabClasses) || button.classList.remove(...inactiveTabClasses);
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove(...activeTabClasses);
+                        btn.classList.add(...inactiveTabClasses);
+                    });
+                    button.classList.add(...activeTabClasses);
+                    button.classList.remove(...inactiveTabClasses);
                     document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
                     document.querySelector(button.dataset.tabTarget).classList.remove('hidden');
 
@@ -221,6 +233,7 @@
                     switch (button.dataset.tabTarget) {
                         case '#tab-standard': updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)'); break;
                         case '#tab-amnezia': updateQrCode(generatedConfigs.amnezia, 'QR Code (AmneziaWG)'); break;
+                        case '#tab-singbox':
                         default: updateQrCode(null, 'QR Code (Not Scannable)'); break;
                     }
                 });
@@ -256,7 +269,7 @@
                 qrcodeTitle.textContent = title;
                 if (content) {
                     qrcodeContainer.innerHTML = '';
-                    new QRCode(qrcodeContainer, { text: content, width: 200, height: 200 });
+                    new QRCode(qrcodeContainer, { text: content, width: 200, height: 200, correctLevel : QRCode.CorrectLevel.L });
                     qrcodeContainer.classList.remove('hidden');
                     qrcodeMessage.classList.add('hidden');
                 } else {

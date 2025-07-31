@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate WARP Generator & Sharer</title>
+    <title>Ultimate WARP Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -16,7 +16,7 @@
 
     <div class="w-full max-w-5xl">
         <div class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator & Sharer</h1>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator</h1>
             <p class="text-gray-400 mt-2 text-lg">Generate shareable configs for any client.</p>
         </div>
 
@@ -34,9 +34,9 @@
                         <h3 class="text-xl font-bold mb-4 text-center text-gray-300">Configuration Preview & Sharing</h3>
                         <div class="border-b border-gray-700 mb-4">
                              <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">sing-box</button>
+                                <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
+                                <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
+                                <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">sing-box</button>
                             </nav>
                         </div>
                         <div id="tab-content-area"></div>
@@ -129,38 +129,20 @@
             
             function generateAllFormats(account, endpoints) {
                 const primaryEndpoint = endpoints[0];
-
                 const singboxTemplate = {
                   "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
                   "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
                   "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ],
                   "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
                 };
-                
                 const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
-                
                 endpoints.forEach(ep => {
                     const [server, port] = ep.split(':');
                     const outboundTag = `WARP-${server}`;
-
-                    const wireguardOutbound = {
-                        "type": "wireguard",
-                        "tag": outboundTag,
-                        "server": server,
-                        "server_port": parseInt(port),
-                        "local_address": [`${account.v4}/32`, `${account.v6}/128`],
-                        "private_key": account.privateKey,
-                        "peer_public_key": account.peerPublicKey,
-                        "reserved": account.reserved,
-                        "mtu": 1280
-                    };
+                    const wireguardOutbound = { "type": "wireguard", "tag": outboundTag, "server": server, "server_port": parseInt(port), "local_address": [`${account.v4}/32`, `${account.v6}/128`], "private_key": account.privateKey, "peer_public_key": account.peerPublicKey, "reserved": account.reserved, "mtu": 1280 };
                     singboxTemplate.outbounds.push(wireguardOutbound);
-
-                    if (urltestOutbound) {
-                        urltestOutbound.outbounds.push(outboundTag);
-                    }
+                    if (urltestOutbound) { urltestOutbound.outbounds.push(outboundTag); }
                 });
-                
                 return {
                     standard: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${account.v4}/32, ${account.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${primaryEndpoint}`,
                     amnezia: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${account.v4}/32, ${account.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${primaryEndpoint}`,
@@ -168,21 +150,56 @@
                 };
             }
 
+            function createDownloadLinks(clientType) {
+                const links = {
+                    standard: [
+                        { name: 'Windows', url: 'https://download.wireguard.com/windows-client/wireguard-installer.exe' },
+                        { name: 'Android', url: 'https://play.google.com/store/apps/details?id=com.wireguard.android' },
+                        { name: 'iOS', url: 'https://apps.apple.com/us/app/wireguard/id1441195209' },
+                        { name: 'Linux', url: 'https://www.wireguard.com/install/' },
+                    ],
+                    amnezia: [
+                        { name: 'Windows', url: 'https://amnezia.org/downloads/AmneziaVPN_win-x64.exe' },
+                        { name: 'Android', url: 'https://amnezia.org/downloads/amnezia-vpn.apk' },
+                        { name: 'iOS', url: 'https://apps.apple.com/us/app/amneziavpn/id1600529738' },
+                        { name: 'Linux', url: 'https://amnezia.org/downloads/AmneziaVPN_linux-x64.AppImage' },
+                    ],
+                    singbox: [
+                        { name: 'Windows (Hiddify)', url: 'https://github.com/hiddify/hiddify-app/releases/latest' },
+                        { name: 'Android', url: 'https://github.com/SagerNet/sing-box-for-android/releases/latest' },
+                        { name: 'iOS', url: 'https://apps.apple.com/us/app/sing-box-vt/id6673731168' },
+                        { name: 'Linux (Core)', url: 'https://github.com/SagerNet/sing-box/releases/latest' },
+                    ]
+                };
+                const clientLinks = links[clientType];
+                if (!clientLinks) return '';
+                
+                let linksHtml = '<div class="mt-6 pt-4 border-t border-gray-700">';
+                linksHtml += '<h4 class="text-sm font-semibold text-gray-400 mb-3 text-center">Download a Compatible Client:</h4>';
+                linksHtml += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">';
+                clientLinks.forEach(link => {
+                    linksHtml += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="block bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors">${link.name}</a>`;
+                });
+                linksHtml += '</div></div>';
+                return linksHtml;
+            }
+
             function populateUI(configs) {
                 const tabContentArea = document.getElementById('tab-content-area');
                 const templates = [
-                    { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
-                    { id: "tab-amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
-                    { id: "tab-singbox", title: "sing-box Format (URL-Test)", content: configs.singbox, color: "teal" }
+                    { id: "standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
+                    { id: "amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
+                    { id: "singbox", title: "sing-box Format (URL-Test)", content: configs.singbox, color: "teal" }
                 ];
                 let html = '';
-                for (const data of templates) {
-                    html += `<div id="${data.id}" class="tab-pane ${data.id !== 'tab-standard' ? 'hidden' : ''}">
+                templates.forEach(data => {
+                    html += `<div id="tab-${data.id}" class="tab-pane ${data.id !== 'standard' ? 'hidden' : ''}">
                         <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
                         ${createActionButtons(data.content, data.color)}
-                        <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[400px]"><code>${escapeHtml(data.content)}</code></pre>
+                        <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[300px]"><code>${escapeHtml(data.content)}</code></pre>
+                        ${createDownloadLinks(data.id)}
                     </div>`;
-                }
+                });
                 tabContentArea.innerHTML = html;
             }
 
@@ -245,7 +262,7 @@
 
             document.getElementById('tab-content-area').addEventListener('click', async e => {
                 const button = e.target.closest('button');
-                if (!button) return;
+                if (!button || button.closest('.grid')) return;
                 
                 if (button.classList.contains('copy-btn')) {
                     const textToCopy = unescape(button.dataset.clipboardText);
@@ -261,6 +278,13 @@
                         const container = button.closest('.tab-pane').querySelector('.share-result-container');
                         container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');
+                        
+                        // If the share button was in the singbox tab, update the main QR code
+                        const parentPane = button.closest('.tab-pane');
+                        if (parentPane && parentPane.id === 'tab-singbox') {
+                            updateQrCode(shareUrl, 'sing-box Share Link QR');
+                        }
+
                     } catch (error) { console.error("Share failed:", error); alert("Failed to share config."); } finally { button.disabled = false; button.innerHTML = originalText; }
                 } else if (button.classList.contains('copy-link-btn')) {
                     const linkToCopy = button.previousElementSibling.value;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate WARP Generator</title>
+    <title>Ultimate WARP Generator & Sharer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -16,8 +16,8 @@
 
     <div class="w-full max-w-5xl">
         <div class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator</h1>
-            <p class="text-gray-400 mt-2 text-lg">Generate shareable WARP configs.</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator & Sharer</h1>
+            <p class="text-gray-400 mt-2 text-lg">Generate shareable configs for any client.</p>
         </div>
 
         <div id="generate-section" class="text-center">
@@ -36,7 +36,7 @@
                              <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
                                 <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">Standard WG</button>
                                 <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">AmneziaWG</button>
-                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">Sing-Box</button>
+                                <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">sing-box</button>
                             </nav>
                         </div>
                         <div id="tab-content-area"></div>
@@ -86,7 +86,6 @@
             const shzAl = new ShzAlClient();
             const generateBtn = document.getElementById('generateBtn'), statusText = document.getElementById('statusText'), resultsDiv = document.getElementById('results');
             const qrcodeContainer = document.getElementById('qrcode'), qrcodeTitle = document.getElementById('qrcode-title'), qrcodeMessage = document.getElementById('qrcode-message');
-            const tabButtons = document.querySelectorAll('.tab-btn'), tabContentArea = document.getElementById('tab-content-area');
             
             const originalButtonHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Generate All Configs`;
             const loadingButtonHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...`;
@@ -131,30 +130,47 @@
             function generateAllFormats(account, endpoints) {
                 const primaryEndpoint = endpoints[0];
 
-                // --- sing-box Configuration ---
+                // --- sing-box Configuration (Modern/Correct Format) ---
                 const singboxTemplate = {
                   "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
                   "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
                   "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ],
+                  "endpoints": [], // This will be populated below
                   "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
                 };
                 
                 const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
+                
                 endpoints.slice(0, 5).forEach(ep => {
-                    const warpOutbound = {
-                        type: "wireguard",
-                        tag: `WARP-${ep.split(':')[0]}`,
-                        server: ep.split(':')[0],
-                        server_port: parseInt(ep.split(':')[1]),
-                        local_address: [`${account.v4}/32`, `${account.v6}/128`],
-                        private_key: account.privateKey,
-                        peer_public_key: account.peerPublicKey,
-                        reserved: account.reserved,
-                        mtu: 1280
+                    const [server, port] = ep.split(':');
+                    const endpointTag = `WARP-EP-${server}`;
+                    const outboundTag = `WARP-${server}`;
+
+                    const wireguardEndpoint = {
+                        "type": "wireguard",
+                        "tag": endpointTag,
+                        "address": [`${account.v4}/32`, `${account.v6}/128`],
+                        "private_key": account.privateKey,
+                        "mtu": 1280,
+                        "peers": [{
+                            "server": server,
+                            "server_port": parseInt(port),
+                            "public_key": account.peerPublicKey,
+                            "allowed_ips": ["0.0.0.0/0", "::/0"],
+                            "reserved": account.reserved
+                        }]
                     };
-                    singboxTemplate.outbounds.push(warpOutbound);
+                    singboxTemplate.endpoints.push(wireguardEndpoint);
+
+                    const simpleOutbound = {
+                        "type": "endpoint",
+                        "tag": outboundTag,
+                        "detour": endpointTag
+                    };
+                    singboxTemplate.outbounds.push(simpleOutbound);
+
                     if (urltestOutbound) {
-                        urltestOutbound.outbounds.push(warpOutbound.tag);
+                        urltestOutbound.outbounds.push(outboundTag);
                     }
                 });
                 
@@ -166,6 +182,7 @@
             }
 
             function populateUI(configs) {
+                const tabContentArea = document.getElementById('tab-content-area');
                 const templates = [
                     { id: "tab-standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
                     { id: "tab-amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
@@ -239,7 +256,7 @@
                 });
             });
 
-            tabContentArea.addEventListener('click', async e => {
+            document.getElementById('tab-content-area').addEventListener('click', async e => {
                 const button = e.target.closest('button');
                 if (!button) return;
                 

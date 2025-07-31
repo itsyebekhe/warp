@@ -262,7 +262,8 @@
 
             document.getElementById('tab-content-area').addEventListener('click', async e => {
                 const button = e.target.closest('button');
-                if (!button || button.closest('.grid')) return;
+                // CORRECTED: This simple check is all that's needed.
+                if (!button) return;
                 
                 if (button.classList.contains('copy-btn')) {
                     const textToCopy = unescape(button.dataset.clipboardText);
@@ -279,7 +280,7 @@
                         container.querySelector('input').value = shareUrl;
                         container.classList.remove('hidden');
                         
-                        // If the share button was in the singbox tab, update the main QR code
+                        // If the share button was in the singbox tab, update the main QR code with the share URL
                         const parentPane = button.closest('.tab-pane');
                         if (parentPane && parentPane.id === 'tab-singbox') {
                             updateQrCode(shareUrl, 'sing-box Share Link QR');

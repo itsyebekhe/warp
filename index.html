@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
         allEndpoints.forEach(ep => {
             const [server, port] = ep.split(':');
-            const outboundTag = `WARP-${server}`;
+            const outboundTag = `WARP-${server}:${port}`;
             const wireguardOutbound = { "type": "wireguard", "tag": outboundTag, "server": server, "server_port": parseInt(port), "local_address": [`${account.v4}/32`, `${account.v6}/128`], "private_key": account.privateKey, "peer_public_key": account.peerPublicKey, "reserved": account.reserved, "mtu": 1280 };
             singboxTemplate.outbounds.push(wireguardOutbound);
             if (urltestOutbound) { urltestOutbound.outbounds.push(outboundTag); }

@@ -118,7 +118,6 @@
             const generateBtn = document.getElementById('generateBtn'), statusText = document.getElementById('statusText'), resultsDiv = document.getElementById('results');
             const qrcodeContainer = document.getElementById('qrcode'), qrcodeTitle = document.getElementById('qrcode-title'), qrcodeMessage = document.getElementById('qrcode-message');
             
-            // Modal elements
             const howToUseBtn = document.getElementById('howToUseBtn');
             const howToUseModal = document.getElementById('howToUseModal');
             const closeModalBtn = document.getElementById('closeModalBtn');
@@ -129,6 +128,8 @@
             generateBtn.innerHTML = originalButtonHTML;
 
             let generatedConfigs = null;
+            let currentAccount = null;
+            let allFetchedEndpoints = [];
 
             function setStatus(message) { statusText.textContent = message; }
             const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
@@ -157,15 +158,19 @@
                     if (!response.ok) throw new Error('Endpoint list fetch failed');
                     const text = await response.text();
                     const data = JSON.parse(text.replace(/[\u200B-\u200D\uFEFF]/g, ''));
-                    return data.ipv4.sort(() => 0.5 - Math.random());
+                    const endpoints = data.ipv4;
+                    const recommended = endpoints.filter(ip => ip.startsWith('8.'));
+                    const others = endpoints.filter(ip => !ip.startsWith('8.'));
+                    recommended.sort(() => 0.5 - Math.random());
+                    others.sort(() => 0.5 - Math.random());
+                    return recommended.concat(others);
                 } catch (error) {
                     setStatus("Endpoint fetch failed. Using random fallback.");
                     return Array.from({length: 5}, () => "162.159.192." + Math.floor(Math.random() * 256) + ":2408");
                 }
             }
             
-            function generateAllFormats(account, endpoints) {
-                const primaryEndpoint = endpoints[0];
+            function generateAllFormats(account, allEndpoints, primaryEndpoint) {
                 const singboxTemplate = {
                   "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" },
                   "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ],
@@ -173,7 +178,7 @@
                   "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] }
                 };
                 const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
-                endpoints.forEach(ep => {
+                allEndpoints.forEach(ep => {
                     const [server, port] = ep.split(':');
                     const outboundTag = `WARP-${server}`;
                     const wireguardOutbound = { "type": "wireguard", "tag": outboundTag, "server": server, "server_port": parseInt(port), "local_address": [`${account.v4}/32`, `${account.v6}/128`], "private_key": account.privateKey, "peer_public_key": account.peerPublicKey, "reserved": account.reserved, "mtu": 1280 };
@@ -220,19 +225,51 @@
                 return linksHtml;
             }
 
-            function populateUI(configs) {
+            // FIX: Give each radio group a unique name to avoid browser conflicts.
+            function createEndpointSelectorHTML(endpoints, selectedEndpoint, groupName) {
+                let html = `<div class="mt-6 pt-4 border-t border-gray-700">
+                    <h4 class="text-base font-semibold text-gray-300 mb-3 text-center">Select an Endpoint</h4>
+                    <p class="text-sm text-center text-gray-400 mb-4">
+                        <span class="font-bold text-orange-400">Recommended:</span> Endpoints starting with <code class="bg-gray-700 text-orange-300 px-1 rounded">8.x.x.x</code> may offer better performance on some ISPs.
+                    </p>
+                    <div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
+                
+                endpoints.forEach(ep => {
+                    const isChecked = ep === selectedEndpoint ? 'checked' : '';
+                    const isRecommended = ep.startsWith('8.');
+                    const labelClass = isRecommended ? 'text-orange-300' : 'text-gray-300';
+                    const recommendText = isRecommended ? '<span class="text-xs font-sans font-bold text-orange-500 ml-2">(Recommended)</span>' : '';
+
+                    html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer">
+                                <input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800" ${isChecked}>
+                                <span class="ml-3 ${labelClass} font-mono text-sm">${ep} ${recommendText}</span>
+                            </label>`;
+                });
+                
+                html += `</div></div>`;
+                return html;
+            }
+
+            function populateUI(configs, allEndpoints, selectedEndpoint) {
                 const tabContentArea = document.getElementById('tab-content-area');
+                
                 const templates = [
-                    { id: "standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue" },
-                    { id: "amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple" },
-                    { id: "singbox", title: "sing-box Format (URL-Test)", content: configs.singbox, color: "teal" }
+                    { id: "standard", title: "Standard WireGuard Format", content: configs.standard, color: "blue", showSelector: true },
+                    { id: "amnezia", title: "AmneziaWG Format (Jitter)", content: configs.amnezia, color: "purple", showSelector: true },
+                    { id: "singbox", title: "sing-box Format (URL-Test)", content: configs.singbox, color: "teal", showSelector: false }
                 ];
                 let html = '';
                 templates.forEach(data => {
+                    // FIX: Pass a unique name for each endpoint selector group.
+                    const endpointSelectorHtml = data.showSelector 
+                        ? createEndpointSelectorHTML(allEndpoints, selectedEndpoint, `endpoint-selector-${data.id}`) 
+                        : '';
+                    
                     html += `<div id="tab-${data.id}" class="tab-pane ${data.id !== 'standard' ? 'hidden' : ''}">
                         <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>
                         ${createActionButtons(data.content, data.color, data.id)}
                         <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[300px]"><code>${escapeHtml(data.content)}</code></pre>
+                        ${endpointSelectorHtml}
                         ${createDownloadLinks(data.id)}
                     </div>`;
                 });
@@ -243,7 +280,6 @@
                 const hasDownload = id === 'standard' || id === 'amnezia';
                 const filename = id === 'standard' ? 'wg-config.conf' : 'amnezia-config.conf';
 
-                // Use TailwindCSS's JIT compiler to recognize these classes: bg-blue-600 hover:bg-blue-700, bg-purple-600 hover:bg-purple-700, bg-teal-600 hover:bg-teal-700
                 let buttonsHtml = `<div class="flex space-x-2 mb-2">
                             <button class="copy-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg" data-clipboard-text="${escape(content)}">Copy</button>`;
                 
@@ -265,11 +301,12 @@
             generateBtn.addEventListener('click', async () => {
                 generateBtn.disabled = true; generateBtn.innerHTML = loadingButtonHTML;
                 try {
-                    const endpoints = await fetchAllEndpoints();
-                    const account = await fetchAccountFromWorker();
+                    allFetchedEndpoints = await fetchAllEndpoints();
+                    currentAccount = await fetchAccountFromWorker();
                     setStatus("Generating UI...");
-                    generatedConfigs = generateAllFormats(account, endpoints);
-                    populateUI(generatedConfigs);
+                    const primaryEndpoint = allFetchedEndpoints[0];
+                    generatedConfigs = generateAllFormats(currentAccount, allFetchedEndpoints, primaryEndpoint);
+                    populateUI(generatedConfigs, allFetchedEndpoints, primaryEndpoint);
                     updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)');
                     if (resultsDiv.classList.contains('hidden')) {
                         resultsDiv.classList.remove('hidden');
@@ -285,7 +322,7 @@
             });
             
             const activeTabClasses = ['border-orange-500', 'text-orange-400'], inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
-            document.body.addEventListener('click', e => { // Changed to body to catch tab buttons as well
+            document.body.addEventListener('click', e => { 
                 if (e.target.classList.contains('tab-btn')) {
                     const button = e.target;
                     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -315,6 +352,47 @@
                 }
             });
 
+            function updateStandardConfigs(newEndpoint) {
+                if (!currentAccount || !allFetchedEndpoints.length) return;
+
+                const newStandardConfig = `[Interface]\nPrivateKey = ${currentAccount.privateKey}\nAddress = ${currentAccount.v4}/32, ${currentAccount.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\n\n[Peer]\nPublicKey = ${currentAccount.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${newEndpoint}`;
+                const newAmneziaConfig = `[Interface]\nPrivateKey = ${currentAccount.privateKey}\nAddress = ${currentAccount.v4}/32, ${currentAccount.v6}/128\nDNS = 1.1.1.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${currentAccount.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${newEndpoint}`;
+
+                generatedConfigs.standard = newStandardConfig;
+                generatedConfigs.amnezia = newAmneziaConfig;
+
+                const configsToUpdate = [
+                    { id: 'standard', content: newStandardConfig },
+                    { id: 'amnezia', content: newAmneziaConfig }
+                ];
+
+                configsToUpdate.forEach(conf => {
+                    const tabPane = document.getElementById(`tab-${conf.id}`);
+                    if (tabPane) {
+                        tabPane.querySelector('pre code').textContent = conf.content;
+                        tabPane.querySelector('.copy-btn').dataset.clipboardText = escape(conf.content);
+                        const downloadBtn = tabPane.querySelector('.download-btn');
+                        if (downloadBtn) { downloadBtn.dataset.downloadContent = escape(conf.content); }
+                        tabPane.querySelector('.share-btn').dataset.shareContent = escape(conf.content);
+                        const shareResult = tabPane.querySelector('.share-result-container');
+                        if (shareResult) {
+                            shareResult.classList.add('hidden');
+                            shareResult.querySelector('input').value = '';
+                        }
+                    }
+                });
+
+                const activeTab = document.querySelector('.tab-btn.border-orange-500');
+                if (activeTab) {
+                    const activeTabId = activeTab.dataset.tabTarget;
+                    if (activeTabId === '#tab-standard') {
+                        updateQrCode(generatedConfigs.standard, 'QR Code (Standard WG)');
+                    } else if (activeTabId === '#tab-amnezia') {
+                        updateQrCode(generatedConfigs.amnezia, 'QR Code (AmneziaWG)');
+                    }
+                }
+            }
+            
             document.getElementById('tab-content-area').addEventListener('click', async e => {
                 const button = e.target.closest('button');
                 if (!button) return;
@@ -330,7 +408,7 @@
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
                     a.download = filename;
-                    document.body.appendChild(a); // Required for Firefox
+                    document.body.appendChild(a);
                     a.click();
                     URL.revokeObjectURL(a.href);
                     document.body.removeChild(a);
@@ -358,6 +436,22 @@
                 }
             });
 
+            // FIX: Use a robust change listener that synchronizes all radio groups.
+            document.getElementById('tab-content-area').addEventListener('change', e => {
+                // Listen for changes on any radio button whose name starts with "endpoint-selector-"
+                if (e.target.matches('input[name^="endpoint-selector-"]')) {
+                    const newEndpoint = e.target.value;
+                    
+                    // Synchronize all radio button groups to reflect the new selection
+                    document.querySelectorAll('input[name^="endpoint-selector-"]').forEach(radio => {
+                        radio.checked = radio.value === newEndpoint;
+                    });
+                    
+                    // Update the configuration text and all related data
+                    updateStandardConfigs(newEndpoint);
+                }
+            });
+
             function updateQrCode(content, title) {
                 qrcodeTitle.textContent = title;
                 if (content) {
@@ -374,16 +468,9 @@
 
             // --- Modal Logic ---
             howToUseBtn.addEventListener('click', () => {
-                // Fetch the content from readme.md
                 fetch('https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.md')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('readme.md not found.');
-                        }
-                        return response.text();
-                    })
+                    .then(response => { if (!response.ok) { throw new Error('readme.md not found.'); } return response.text(); })
                     .then(markdown => {
-                        // Use the 'marked' library to convert markdown to HTML
                         howToUseContent.innerHTML = marked.parse(markdown);
                         howToUseModal.classList.remove('hidden');
                     })
@@ -394,24 +481,10 @@
                     });
             });
 
-            function closeModal() {
-                howToUseModal.classList.add('hidden');
-            }
-
+            function closeModal() { howToUseModal.classList.add('hidden'); }
             closeModalBtn.addEventListener('click', closeModal);
-            howToUseModal.addEventListener('click', (e) => {
-                // Close modal if the outer background is clicked
-                if (e.target === howToUseModal) {
-                    closeModal();
-                }
-            });
-            document.addEventListener('keydown', (e) => {
-                if (e.key === "Escape" && !howToUseModal.classList.contains('hidden')) {
-                    closeModal();
-                }
-            });
-
-
+            howToUseModal.addEventListener('click', (e) => { if (e.target === howToUseModal) { closeModal(); } });
+            document.addEventListener('keydown', (e) => { if (e.key === "Escape" && !howToUseModal.classList.contains('hidden')) { closeModal(); } });
             resultsDiv.style.opacity = 0; resultsDiv.style.transform = 'translateY(20px)';
         });
     </script>

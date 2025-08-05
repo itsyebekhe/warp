@@ -295,13 +295,24 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDns = target.value.trim();
             updateDisplayedConfigs();
         } else if (target.matches('.dns-select')) {
+            // ----- FIX STARTS HERE -----
             const newDnsValue = target.value;
             const isCustomSelected = newDnsValue === 'custom';
-            if (!isCustomSelected) {
+
+            if (isCustomSelected) {
+                // If user selects "Custom...", just show the input field locally.
+                // Do not update the global state or sync all UIs yet.
+                const container = target.closest('.dns-container');
+                container.querySelector('.dns-custom-input').classList.remove('hidden');
+                container.querySelector('.save-custom-dns-btn').classList.remove('hidden');
+                container.querySelector('.delete-custom-dns-btn').classList.add('hidden');
+            } else {
+                // If user selects a predefined DNS, update the global state and sync all UIs.
                 currentDns = newDnsValue;
                 updateDisplayedConfigs();
+                syncSelectors();
             }
-            syncSelectors();
+            // ----- FIX ENDS HERE -----
         }
     });
 

@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate WARP Generator v1.2.0</title>
+    <title>Ultimate WARP Generator v1.3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Library to convert Markdown to HTML -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- NEW: Tooltip library for better UX -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
     <style>
         .gradient-text { background-image: linear-gradient(to right, #fb923c, #f97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
         body { background-color: #111827; }
@@ -25,9 +28,6 @@
         .markdown-content strong { color: #f9fafb; }
         .content-section { border: 2px solid #374151; transition: border-color 0.2s ease-in-out; }
         .content-section.active { border-color: #f97316; }
-        .endpoint-type-indicator { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; margin-left: 0.5rem; }
-        .ipv4-indicator { background-color: #3b82f6; color: white; }
-        .ipv6-indicator { background-color: #8b5cf6; color: white; }
         .endpoint-tab { padding: 0.5rem 1rem; border-radius: 0.375rem 0.375rem 0 0; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; }
         .endpoint-tab.active { background-color: #1f2937; color: #f97316; border-bottom: 2px solid #f97316; }
         .endpoint-tab:not(.active) { background-color: #374151; color: #9ca3af; }
@@ -41,49 +41,42 @@
         [dir="rtl"] .text-right { text-align: left; }
         [dir="rtl"] .text-left { text-align: right; }
         /* Latency indicator styles */
-        .latency-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 0.5rem; }
+        .latency-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 0.5rem; border: 1px solid rgba(255,255,255,0.1); }
         .latency-fast { background-color: #10b981; } /* green */
         .latency-medium { background-color: #f59e0b; } /* yellow */
         .latency-slow { background-color: #ef4444; } /* red */
         .latency-unknown { background-color: #6b7280; } /* gray */
         .testing-indicator { animation: pulse 1.5s infinite; }
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
         /* Mirror notice styles */
-        .mirror-notice {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .mirror-notice { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* NEW: Custom Modal Styles */
+        .modal-backdrop { animation: fadeIn 0.2s ease-out; }
+        .modal-content { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        /* NEW: Tooltip Styles */
+        .tippy-box[data-theme~='dark-orange'] { background-color: #2d3748; color: #e2e8f0; border: 1px solid #f97316; }
+        .tippy-box[data-theme~='dark-orange'][data-placement^='top'] > .tippy-arrow::before { border-top-color: #f97316; }
+        .tippy-box[data-theme~='dark-orange'][data-placement^='bottom'] > .tippy-arrow::before { border-bottom-color: #f97316; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="w-full max-w-5xl">
+    <div class="w-full max-w-7xl">
         <div class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator</h1>
             <p class="text-gray-400 mt-2 text-lg">Generate & manage shareable configs for any client.</p>
             <div class="flex justify-center items-center mt-2 space-x-4">
-                <span class="text-sm text-gray-500">v1.2.0</span>
+                <span class="text-sm text-gray-500">v1.3.0</span>
                 <div class="flex items-center space-x-1">
-                    <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                    <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     <span id="starCount" class="text-sm text-gray-400">-</span>
                 </div>
                 <div class="flex items-center space-x-1">
-                    <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
+                    <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     <span id="forkCount" class="text-sm text-gray-400">-</span>
                 </div>
             </div>
-            
-            <!-- Mirror Notice Section -->
             <div id="mirrorNotice" class="hidden mt-2 p-2 bg-blue-900/30 border border-blue-700/50 rounded-lg text-center">
                 <p class="text-sm text-blue-300">
                     <span class="font-semibold" id="mirrorNoticeText">Alternative Mirror:</span> 
@@ -96,7 +89,6 @@
                     Switch Site
                 </button>
             </div>
-            
             <button id="howToUseBtn" class="mt-4 text-orange-400 border border-orange-400/50 hover:bg-orange-400/10 font-semibold py-2 px-4 rounded-lg transition-colors">
                 راهنمای استفاده (How to Use)
             </button>
@@ -114,7 +106,7 @@
                 <h2 class="text-xl font-bold text-white mb-4">Your Saved Configurations</h2>
                 <div class="flex flex-col sm:flex-row gap-4 items-center">
                     <select id="savedConfigsDropdown" class="block w-full sm:w-auto flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-orange-500 focus:border-orange-500"></select>
-                    <button id="updateEndpointsBtn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Update Endpoints</button>
+                    <button id="updateEndpointsBtn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Refresh Endpoints</button>
                 </div>
                 <div class="mt-4 flex flex-wrap justify-center gap-3">
                     <button id="generateNewBtn" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg">Generate New</button>
@@ -124,8 +116,29 @@
             </div>
             <p id="statusText" class="text-gray-400 text-sm mt-4 h-5"></p>
         </div>
-        <div id="results" class="hidden transition-all duration-500 ease-in-out"></div>
+
+        <!-- NEW: Two-column layout for results and settings -->
+        <div id="results" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+            <!-- Left Column: Outputs -->
+            <div id="results-output" class="lg:col-span-2"></div>
+            <!-- Right Column: Settings & QR Code -->
+            <div id="results-sidebar" class="space-y-6"></div>
+        </div>
     </div>
+
+    <!-- NEW: Re-usable custom modal for user input -->
+    <div id="customModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="modal-content bg-gray-800 border border-gray-700 rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h2 id="modalTitle" class="text-xl font-bold text-white mb-4">Modal Title</h2>
+            <p id="modalDescription" class="text-gray-300 mb-4">Description goes here.</p>
+            <input id="modalInput" type="text" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-orange-500 focus:border-orange-500">
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="modalCancel" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-5 rounded-lg transition-colors">Cancel</button>
+                <button id="modalConfirm" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-5 rounded-lg transition-colors">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="howToUseModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between p-4 border-b border-gray-700">
@@ -136,28 +149,16 @@
         </div>
     </div>
     <footer class="text-center py-8 mt-12 w-full">
-        <p class="text-sm text-gray-400">Created with ❤️ by <span class="font-semibold text-gray-300">YEBEKHE</span> | v1.2.0</p>
+        <p class="text-sm text-gray-400">Created with ❤️ by <span class="font-semibold text-gray-300">YEBEKHE</span> | v1.3.0</p>
         <div class="mt-4 flex justify-center space-x-6">
-            <a href="https://t.me/yebekhe" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="Telegram">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.51.71l-4.88-3.58-2.32 2.23c-.25.28-.46.48-.93.48z"/>
-                </svg>
-            </a>
-            <a href="https://x.com/yebekhe" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="X Account">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-            </a>
-            <a href="https://github.com/itsyebekhe/warp" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="GitHub">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297 24 12 18.622 12 .297z"/>
-                </svg>
-            </a>
+            <a href="https://t.me/yebekhe" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="Telegram"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.51.71l-4.88-3.58-2.32 2.23c-.25.28-.46.48-.93.48z"/></svg></a>
+            <a href="https://x.com/yebekhe" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="X Account"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+            <a href="https://github.com/itsyebekhe/warp" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="GitHub"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297 24 12 18.622 12 .297z"/></svg></a>
         </div>
     </footer>
 <script>
 // App version
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 // Multi-language support
 const translations = {
     en: {
@@ -169,7 +170,7 @@ const translations = {
         generateNew: "Generate New",
         rename: "Rename",
         delete: "Delete",
-        updateEndpoints: "Update Endpoints",
+        updateEndpoints: "Refresh Endpoints",
         configurationsReady: "Your Configurations are Ready!",
         configurationPreview: "Configuration Preview & Sharing",
         standardWG: "Standard WG",
@@ -204,7 +205,7 @@ const translations = {
         linkCopied: "Link Copied!",
         sharing: "Sharing...",
         enterName: "Enter a name for this new configuration:",
-        configNamePlaceholder: "Config {date}",
+        configNamePlaceholder: "My Home Config",
         enterNewName: "Enter a new name for this configuration:",
         deleteConfirm: "Are you sure you want to delete \"{name}\"? This cannot be undone.",
         configurationDeleted: "Configuration deleted.",
@@ -292,7 +293,7 @@ const translations = {
         linkCopied: "لینک کپی شد!",
         sharing: "در حال اشتراک‌گذاری...",
         enterName: "نامی برای این تنظیمات جدید وارد کنید:",
-        configNamePlaceholder: "تنظیمات {date}",
+        configNamePlaceholder: "تنظیمات خانه من",
         enterNewName: "نام جدیدی برای این تنظیمات وارد کنید:",
         deleteConfirm: "آیا مطمئن هستید که می‌خواهید \"{name}\" را حذف کنید؟ این عمل قابل بازگشت نیست.",
         configurationDeleted: "تنظیمات حذف شد.",
@@ -380,7 +381,7 @@ const translations = {
         linkCopied: "Ссылка скопирована!",
         sharing: "Обмен...",
         enterName: "Введите имя для этой новой конфигурации:",
-        configNamePlaceholder: "Конфигурация {date}",
+        configNamePlaceholder: "Моя домашняя конфигурация",
         enterNewName: "Введите новое имя для этой конфигурации:",
         deleteConfirm: "Вы уверены, что хотите удалить \"{name}\"? Это действие нельзя отменить.",
         configurationDeleted: "Конфигурация удалена.",
@@ -468,7 +469,7 @@ const translations = {
         linkCopied: "链接已复制！",
         sharing: "分享中...",
         enterName: "为此新配置输入名称:",
-        configNamePlaceholder: "配置 {date}",
+        configNamePlaceholder: "我的家庭配置",
         enterNewName: "为此配置输入新名称:",
         deleteConfirm: "您确定要删除 \"{name}\" 吗？此操作无法撤销。",
         configurationDeleted: "配置已删除。",
@@ -517,19 +518,18 @@ const translations = {
 const LANGUAGE_STORAGE_KEY = 'warpGeneratorLanguage';
 const DEFAULT_LANGUAGE = 'en';
 let currentLanguage = getInitialLanguage();
+
+class ShzAlClient { constructor(b='https://shz.al'){this.b=b.endsWith('/')?b.slice(0,-1):b}async _h(r){if(!r.ok){const e=await r.text();throw new Error(`API Error: ${r.status} ${r.statusText} - ${e}`)}return r}async uploadPaste(c,o={}){const f=new FormData();f.append('c',c);if(o.expiration)f.append('e',o.expiration);const r=await fetch(this.b+'/',{method:'POST',body:f});await this._h(r);return r.json()}}
 // Get saved language or detect browser language
 function getInitialLanguage() {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
     if (savedLanguage && translations[savedLanguage]) {
         return savedLanguage;
     }
-    
-    // Try to detect browser language
     const browserLang = navigator.language.split('-')[0];
     if (translations[browserLang]) {
         return browserLang;
     }
-    
     return DEFAULT_LANGUAGE;
 }
 // Set the current language
@@ -538,35 +538,27 @@ function setLanguage(lang) {
         currentLanguage = lang;
         localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
         updateUILanguage();
-        
-        // Set document direction for RTL languages (Persian)
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
     }
 }
 // Get translation for a key
 function t(key, replacements = {}) {
-    let text = translations[currentLanguage][key] || translations[DEFAULT_LANGUAGE][key] || key;
-    
-    // Replace placeholders in the text
+    let text = translations[currentLanguage]?.[key] || translations[DEFAULT_LANGUAGE][key] || key;
     Object.entries(replacements).forEach(([placeholder, value]) => {
         text = text.replace(new RegExp(`{${placeholder}}`, 'g'), value);
     });
-    
     return text;
 }
 // Add language selector to the UI
 function addLanguageSelector() {
     const header = document.querySelector('div.text-center.mb-8');
-    
     const languageSelector = document.createElement('div');
     languageSelector.className = 'flex justify-center mt-4';
     languageSelector.innerHTML = `
         <div class="relative">
             <button id="languageDropdownBtn" class="flex items-center text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors">
                 <span id="currentLangText">${t('language')}</span>
-                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
             <div id="languageDropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-10">
                 <button class="language-option block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-t-lg" data-lang="en">English</button>
@@ -576,49 +568,28 @@ function addLanguageSelector() {
             </div>
         </div>
     `;
-    
     header.appendChild(languageSelector);
-    
-    // Add event listeners
     const dropdownBtn = document.getElementById('languageDropdownBtn');
     const dropdown = document.getElementById('languageDropdown');
-    
-    dropdownBtn.addEventListener('click', () => {
-        dropdown.classList.toggle('hidden');
-    });
-    
-    // Close dropdown when clicking outside
+    dropdownBtn.addEventListener('click', () => dropdown.classList.toggle('hidden'));
     document.addEventListener('click', (e) => {
         if (!dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.add('hidden');
         }
     });
-    
-    // Handle language selection
     document.querySelectorAll('.language-option').forEach(option => {
         option.addEventListener('click', () => {
-            const lang = option.dataset.lang;
-            setLanguage(lang);
+            setLanguage(option.dataset.lang);
             dropdown.classList.add('hidden');
         });
     });
 }
 // Update all UI elements with translations
 function updateUILanguage() {
-    // Update title and subtitle
     document.querySelector('h1').textContent = t('title');
     document.querySelector('p.text-gray-400.mt-2.text-lg').textContent = t('subtitle');
-    
-    // Update buttons
     document.getElementById('howToUseBtn').textContent = t('howToUse');
-    document.getElementById('generateBtn').innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-        ${t('generateFirstConfig')}
-    `;
-    
-    // Update config manager
+    document.getElementById('generateBtn').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>${t('generateFirstConfig')}`;
     const configManager = document.getElementById('config-manager');
     if (configManager && !configManager.classList.contains('hidden')) {
         configManager.querySelector('h2').textContent = t('yourSavedConfigurations');
@@ -627,260 +598,29 @@ function updateUILanguage() {
         document.getElementById('deleteConfigBtn').textContent = t('delete');
         document.getElementById('updateEndpointsBtn').textContent = t('updateEndpoints');
     }
-    
-    // Update results section if visible
     const resultsSection = document.getElementById('results');
     if (resultsSection && !resultsSection.classList.contains('hidden')) {
-        updateResultsSectionLanguage();
+        // Re-render the results to update all text nodes
+        renderResults();
     }
-    
-    // Update footer
     document.querySelector('footer p').innerHTML = `${t('createdBy')} <span class="font-semibold text-gray-300">YEBEKHE</span> | v${APP_VERSION}`;
-    
-    // Update language dropdown button text
     const currentLangText = document.getElementById('currentLangText');
-    if (currentLangText) {
-        currentLangText.textContent = t('language');
-    }
-    
-    // Update mirror notice text
+    if (currentLangText) currentLangText.textContent = t('language');
     const mirrorNoticeText = document.getElementById('mirrorNoticeText');
     const ifNotAccessibleText = document.getElementById('ifNotAccessibleText');
     const switchSiteBtn = document.getElementById('switchSiteBtn');
-    
-    if (mirrorNoticeText) {
-        mirrorNoticeText.textContent = t('mirrorNotice');
-    }
-    
-    if (ifNotAccessibleText) {
-        ifNotAccessibleText.textContent = t('ifNotAccessible');
-    }
-    
-    if (switchSiteBtn) {
-        switchSiteBtn.textContent = currentLanguage === 'fa' ? 'تغییر سایت' : 
-                                 currentLanguage === 'ru' ? 'Переключить сайт' : 
-                                 currentLanguage === 'zh' ? '切换站点' : 
-                                 'Switch Site';
-    }
-}
-// Update language in results section
-function updateResultsSectionLanguage() {
-    // Update results title
-    document.querySelector('#results h2').textContent = t('configurationsReady');
-    document.querySelector('#results h3').textContent = t('configurationPreview');
-    
-    // Update tab buttons
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    if (tabButtons.length >= 4) {
-        tabButtons[0].textContent = t('standardWG');
-        tabButtons[1].textContent = t('amneziaWG');
-        tabButtons[2].textContent = t('singBox');
-        tabButtons[3].textContent = t('appUrls');
-    }
-    
-    // Update tab content
-    const tabContents = document.querySelectorAll('.tab-pane');
-    tabContents.forEach(tab => {
-        if (tab.id === 'tab-standard') {
-            tab.querySelector('h3').textContent = t('standardWireGuardFormat');
-        } else if (tab.id === 'tab-amnezia') {
-            tab.querySelector('h3').textContent = t('amneziaWGFormat');
-        } else if (tab.id === 'tab-singbox') {
-            tab.querySelector('h3').textContent = t('singBoxFormat');
-        } else if (tab.id === 'tab-app-urls') {
-            tab.querySelector('p').textContent = t('clickForQrCode');
-            
-            // Update app section titles
-            const appSections = tab.querySelectorAll('.content-section h4');
-            if (appSections.length >= 5) {
-                appSections[0].textContent = t('nekoBoxAndroid');
-                appSections[1].textContent = t('v2RayNGAndroid');
-                appSections[2].textContent = t('streisandiOS');
-                appSections[3].textContent = t('shadowrocketStandard');
-                appSections[4].textContent = t('shadowrocketAmnezia');
-            }
-        }
-        
-        // Update action buttons
-        const actionButtons = tab.querySelectorAll('.copy-btn, .download-btn, .share-btn, .copy-link-btn');
-        actionButtons.forEach(btn => {
-            if (btn.classList.contains('copy-btn')) {
-                btn.textContent = t('copy');
-            } else if (btn.classList.contains('download-btn')) {
-                btn.textContent = t('downloadConf');
-            } else if (btn.classList.contains('share-btn')) {
-                btn.textContent = t('shareLink');
-            } else if (btn.classList.contains('copy-link-btn')) {
-                btn.textContent = t('linkCopied');
-            }
-        });
-        
-        // Update endpoint selector
-        const endpointSelector = tab.querySelector('.mt-6.pt-4.border-t');
-        if (endpointSelector) {
-            endpointSelector.querySelector('h4').textContent = t('selectEndpoint');
-            
-            // Update endpoint tabs
-            const endpointTabs = endpointSelector.querySelectorAll('.endpoint-tab');
-            if (endpointTabs.length >= 2) {
-                endpointTabs[0].textContent = t('ipv4');
-                endpointTabs[1].textContent = t('ipv6');
-            }
-            
-            // Update endpoint descriptions
-            const endpointDescriptions = endpointSelector.querySelectorAll('p.text-sm.text-center.text-gray-400.mb-4');
-            if (endpointDescriptions.length >= 2) {
-                endpointDescriptions[0].innerHTML = `<span class="font-bold text-orange-400">${t('recommended')}:</span> ${t('recommendedText')}`;
-                endpointDescriptions[1].textContent = t('ipv6Text');
-            }
-            
-            // Update "No endpoints available" messages
-            const noEndpointsMessages = endpointSelector.querySelectorAll('p.text-center.text-gray-400.py-4');
-            noEndpointsMessages.forEach(msg => {
-                if (msg.textContent.includes('No IPv4') || msg.textContent.includes('هیچ نقطه پایانی IPv4')) {
-                    msg.textContent = t('noIPv4Endpoints');
-                } else if (msg.textContent.includes('No IPv6') || msg.textContent.includes('هیچ نقطه پایانی IPv6')) {
-                    msg.textContent = t('noIPv6Endpoints');
-                }
-            });
-            
-            // Update test latency button
-            const testLatencyBtn = endpointSelector.querySelector('.test-latency-btn');
-            if (testLatencyBtn) {
-                testLatencyBtn.textContent = t('testLatency');
-            }
-        }
-        
-        // Update DNS selector
-        const dnsSelector = tab.querySelector('.dns-container');
-        if (dnsSelector) {
-            dnsSelector.closest('.mt-6.pt-4.border-t').querySelector('h4').textContent = t('selectDns');
-            
-            // Update DNS options
-            const dnsOptions = dnsSelector.querySelectorAll('optgroup option');
-            if (dnsOptions.length >= 4) {
-                dnsOptions[0].textContent = t('cloudflare');
-                dnsOptions[1].textContent = t('google');
-                dnsOptions[2].textContent = t('quad9');
-                dnsOptions[3].textContent = t('opendns');
-            }
-            
-            const customOption = dnsSelector.querySelector('option[value="custom"]');
-            if (customOption) {
-                customOption.textContent = t('custom');
-            }
-            
-            const saveBtn = dnsSelector.querySelector('.save-custom-dns-btn');
-            const deleteBtn = dnsSelector.querySelector('.delete-custom-dns-btn');
-            
-            if (saveBtn && !saveBtn.classList.contains('hidden')) {
-                saveBtn.textContent = t('save');
-            }
-            
-            if (deleteBtn && !deleteBtn.classList.contains('hidden')) {
-                deleteBtn.textContent = t('delete');
-            }
-        }
-        
-        // Update download links section
-        const downloadSection = tab.querySelector('.mt-6.pt-4.border-t:last-child');
-        if (downloadSection) {
-            downloadSection.querySelector('h4').textContent = t('downloadClient');
-            
-            const downloadLinks = downloadSection.querySelectorAll('a');
-            if (downloadLinks.length >= 4) {
-                downloadLinks[0].textContent = t('windows');
-                downloadLinks[1].textContent = t('android');
-                downloadLinks[2].textContent = t('ios');
-                downloadLinks[3].textContent = t('linux');
-            }
-        }
-    });
-}
-// Fetch GitHub repository stats
-function fetchRepoStats() {
-    fetch('https://api.github.com/repos/itsyebekhe/warp')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('starCount').textContent = data.stargazers_count;
-            document.getElementById('forkCount').textContent = data.forks_count;
-        })
-        .catch(error => {
-            console.error('Error fetching repo stats:', error);
-            document.getElementById('starCount').textContent = '?';
-            document.getElementById('forkCount').textContent = '?';
-        });
-}
-class ShzAlClient {
-    constructor(baseURL = 'https://shz.al') { this.baseURL = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL; }
-    async _handleResponse(response) { if (!response.ok) { const errorText = await response.text(); throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`); } return response; }
-    async uploadPaste(content, options = {}) {
-        const formData = new FormData(); formData.append('c', content); if (options.expiration) formData.append('e', options.expiration);
-        const response = await fetch(this.baseURL + '/', { method: 'POST', body: formData }); await this._handleResponse(response); return response.json();
-    }
+    if (mirrorNoticeText) mirrorNoticeText.textContent = t('mirrorNotice');
+    if (ifNotAccessibleText) ifNotAccessibleText.textContent = t('ifNotAccessible');
+    if (switchSiteBtn) switchSiteBtn.textContent = currentLanguage === 'fa' ? 'تغییر سایت' : currentLanguage === 'ru' ? 'Переключить сайт' : currentLanguage === 'zh' ? '切换站点' : 'Switch Site';
 }
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize language system
-    // Add language selector
     addLanguageSelector();
-    // Set initial language
     updateUILanguage();
-    // Set document direction for RTL languages (Persian)
     document.documentElement.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
-    
-    // Fetch repository stats
     fetchRepoStats();
+    setupMirrorNotice();
     
-    // Mirror site detection and notice
-    const currentHost = window.location.hostname;
-    const githubHost = 'itsyebekhe.github.io';
-    const pagesHost = 'warpgenerator.pages.dev';
-    const mirrorNotice = document.getElementById('mirrorNotice');
-    const mirrorLink = document.getElementById('mirrorLink');
-    const switchSiteBtn = document.getElementById('switchSiteBtn');
-
-    // Check current site and show appropriate mirror
-    if (currentHost === githubHost) {
-        // User is on GitHub Pages, show Cloudflare Pages mirror
-        showMirrorNotice(`https://${pagesHost}/`);
-    } else if (currentHost === pagesHost) {
-        // User is on Cloudflare Pages, show GitHub Pages mirror
-        showMirrorNotice(`https://${githubHost}/warp/`);
-    }
-    
-    // Function to show mirror notice
-    function showMirrorNotice(mirrorUrl) {
-        mirrorLink.href = mirrorUrl;
-
-        // Update the text content based on the mirror URL
-        const mirrorLinkText = document.getElementById('mirrorLinkText');
-        if (mirrorUrl.includes('warpgenerator.pages.dev')) {
-            mirrorLinkText.textContent = 'warpgenerator.pages.dev';
-        } else {
-            mirrorLinkText.textContent = 'itsyebekhe.github.io/warp';
-        }
-
-        mirrorNotice.classList.remove('hidden');
-        mirrorNotice.classList.add('mirror-notice');
-    }
-    
-    // Check current site and show appropriate mirror
-    if (currentHost === githubHost) {
-        // User is on GitHub Pages, show Cloudflare Pages mirror
-        showMirrorNotice(`https://${pagesHost}/`);
-    } else if (currentHost === pagesHost) {
-        // User is on Cloudflare Pages, show GitHub Pages mirror
-        showMirrorNotice(`https://${githubHost}/warp/`);
-    }
-    
-    // Add event listener for switch site button
-    if (switchSiteBtn) {
-        switchSiteBtn.addEventListener('click', () => {
-            window.location.href = mirrorLink.href;
-        });
-    }
-    
-    const shzAl = new ShzAlClient();
+    // Globals
     const statusText = document.getElementById('statusText');
     const resultsDiv = document.getElementById('results');
     const firstTimeGeneratorDiv = document.getElementById('first-time-generator');
@@ -899,9 +639,53 @@ document.addEventListener('DOMContentLoaded', () => {
     let generatedConfigs = null, currentAccount = null, allFetchedEndpoints = [];
     let currentEndpoint = '', currentDns = '1.1.1.1';
     
+    // Storage and Constants
     const STORAGE_KEY = 'warpGeneratorAccounts';
     const CUSTOM_DNS_STORAGE_KEY = 'warpGeneratorCustomDns';
     const idToConfigKeyMap = { 'nekobox-section': 'nekoboxJson', 'v2rayng-section': 'v2rayngUrl', 'streisand-section': 'streisandUrl', 'shadowrocket-std-section': 'shadowrocketStandardUrl', 'shadowrocket-amz-section': 'shadowrocketAmneziaUrl' };
+    const shzAl = new ShzAlClient();
+
+    // ================================================================
+    // MODAL HELPER FUNCTIONS
+    // ================================================================
+    let modalResolve = null;
+    const customModal = document.getElementById('customModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalInput = document.getElementById('modalInput');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalCancel = document.getElementById('modalCancel');
+
+    function showModal({ title, description, placeholder, confirmText, initialValue = '' }) {
+        return new Promise(resolve => {
+            modalTitle.textContent = title;
+            modalDescription.textContent = description;
+            modalInput.placeholder = placeholder || '';
+            modalInput.value = initialValue;
+            modalConfirm.textContent = confirmText || 'Confirm';
+            customModal.classList.remove('hidden');
+            modalInput.focus();
+            modalResolve = resolve;
+        });
+    }
+
+    modalConfirm.addEventListener('click', () => {
+        if (modalResolve) modalResolve(modalInput.value);
+        customModal.classList.add('hidden');
+        modalResolve = null;
+    });
+    modalCancel.addEventListener('click', () => {
+        if (modalResolve) modalResolve(null); // Resolve with null on cancel
+        customModal.classList.add('hidden');
+        modalResolve = null;
+    });
+    document.addEventListener('keydown', (e) => { 
+        if (e.key === "Escape" && !customModal.classList.contains('hidden')) modalCancel.click(); 
+    });
+
+    // ================================================================
+    // CORE FUNCTIONS
+    // ================================================================
     const getSavedAccounts = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const saveAccounts = (accounts) => localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
     const getCustomDnsList = () => JSON.parse(localStorage.getItem(CUSTOM_DNS_STORAGE_KEY) || '[]');
@@ -909,116 +693,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function setStatus(message) { statusText.textContent = message; }
     const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
     const extractKey = (data, keyName) => data.match(new RegExp(`${keyName}:\\s(.+)`))?.[1].trim() || null;
-    
-    // Helper function to parse endpoints (IPv4 and IPv6)
-    function parseEndpoint(endpoint) {
-        if (endpoint.startsWith('[')) {
-            // IPv6 format: [address]:port
-            const closingBracketIndex = endpoint.indexOf(']');
-            const server = endpoint.substring(1, closingBracketIndex);
-            const port = endpoint.substring(closingBracketIndex + 2); // skip ']:' and take the rest
-            return { server, port: parseInt(port), type: 'ipv6' };
-        } else {
-            // IPv4 format: address:port
-            const [server, port] = endpoint.split(':');
-            return { server, port: parseInt(port), type: 'ipv4' };
-        }
-    }
-    
-    // Test endpoint latency
-    async function testEndpointLatency(endpoint) {
-        const { server, port } = parseEndpoint(endpoint);
-        const url = `https://${server}:${port}/cdn-cgi/trace`;
-        
-        try {
-            const startTime = performance.now();
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            
-            const response = await fetch(url, {
-                signal: controller.signal,
-                mode: 'no-cors'
-            });
-            
-            clearTimeout(timeoutId);
-            const latency = Math.round(performance.now() - startTime);
-            
-            // Determine latency category
-            let latencyClass, latencyText;
-            if (latency < 200) {
-                latencyClass = 'latency-fast';
-                latencyText = t('latencyFast');
-            } else if (latency < 500) {
-                latencyClass = 'latency-medium';
-                latencyText = t('latencyMedium');
-            } else {
-                latencyClass = 'latency-slow';
-                latencyText = t('latencySlow');
-            }
-            
-            return { latency, latencyClass, latencyText };
-        } catch (error) {
-            return { latency: null, latencyClass: 'latency-unknown', latencyText: t('latencyUnknown') };
-        }
-    }
-    
-    // Test all endpoints latency
-    async function testAllEndpointsLatency() {
-        setStatus(t('testingLatency'));
-        
-        // Get all endpoints (IPv4 and IPv6)
-        const allEndpoints = [...allFetchedEndpoints.ipv4, ...allFetchedEndpoints.ipv6];
-        
-        // Update all endpoint labels to show testing status
-        document.querySelectorAll('.endpoint-latency').forEach(el => {
-            el.className = 'latency-indicator testing-indicator';
-            el.title = t('testingLatency');
-        });
-        
-        // Test each endpoint
-        const results = {};
-        for (const endpoint of allEndpoints) {
-            const result = await testEndpointLatency(endpoint);
-            results[endpoint] = result;
-            
-            // Update the UI for this endpoint
-            const endpointLabel = document.querySelector(`input[value="${endpoint}"]`).parentElement;
-            let latencyIndicator = endpointLabel.querySelector('.endpoint-latency');
-            
-            if (!latencyIndicator) {
-                latencyIndicator = document.createElement('span');
-                latencyIndicator.className = 'latency-indicator';
-                endpointLabel.appendChild(latencyIndicator);
-            }
-            
-            latencyIndicator.className = `latency-indicator ${result.latencyClass}`;
-            latencyIndicator.title = `${result.latencyText} (${result.latency || 'N/A'}ms)`;
-        }
-        
-        // Auto-select the fastest endpoint
-        const validEndpoints = Object.entries(results)
-            .filter(([_, result]) => result.latency !== null)
-            .sort(([_, a], [__, b]) => a.latency - b.latency);
-        
-        if (validEndpoints.length > 0) {
-            const fastestEndpoint = validEndpoints[0][0];
-            currentEndpoint = fastestEndpoint;
-            
-            // Update the radio button selection
-            document.querySelectorAll('input[name^="endpoint-selector-"]').forEach(radio => {
-                radio.checked = radio.value === fastestEndpoint;
-            });
-            
-            // Update all configurations with the fastest endpoint
-            updateDisplayedConfigs();
-            
-            setStatus(`${t('autoSelectFastest')}: ${fastestEndpoint} (${validEndpoints[0][1].latency}ms)`);
-        } else {
-            setStatus(t('errorOccurred'));
-        }
-        
-        setTimeout(() => setStatus(""), 3000);
-    }
     
     async function fetchAccountFromWorker() {
         setStatus(t('registeringAccount'));
@@ -1036,26 +710,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Endpoint list fetch failed');
             const text = await response.text(); 
             const data = JSON.parse(text.replace(/[\u200B-\u200D\uFEFF]/g, '')); 
-            
-            // Process IPv4 endpoints: separate recommended (starting with '8.') and others
             const ipv4Recommended = data.ipv4.filter(ip => ip.startsWith('8.'));
             const ipv4Others = data.ipv4.filter(ip => !ip.startsWith('8.'));
-            
-            // Shuffle each group randomly
             ipv4Recommended.sort(() => 0.5 - Math.random());
             ipv4Others.sort(() => 0.5 - Math.random());
-            
-            // Combine: recommended first, then others
             const sortedIPv4 = [...ipv4Recommended, ...ipv4Others];
-            
-            // For IPv6, we don't have a specific recommendation, so we just shuffle
-            const shuffledIPv6 = [...data.ipv6];
-            shuffledIPv6.sort(() => 0.5 - Math.random());
-            
-            return {
-                ipv4: sortedIPv4,
-                ipv6: shuffledIPv6
-            };
+            const shuffledIPv6 = [...data.ipv6].sort(() => 0.5 - Math.random());
+            return { ipv4: sortedIPv4, ipv6: shuffledIPv6 };
         } catch (error) { 
             setStatus(t('endpointFetchFailed')); 
             return { 
@@ -1068,29 +729,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateAllFormats(account, endpoint, dns) {
         const singboxTemplate = { "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" }, "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ], "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ], "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] } };
         const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
-        
-        // Process all endpoints (IPv4 and IPv6)
         const allEndpoints = [...allFetchedEndpoints.ipv4, ...allFetchedEndpoints.ipv6];
         allEndpoints.forEach(ep => {
-            const { server, port, type } = parseEndpoint(ep);
+            const { server, port } = parseEndpoint(ep);
             const outboundTag = `WARP-${server}:${port}`;
-            const wireguardOutbound = { 
-                "type": "wireguard", 
-                "tag": outboundTag, 
-                "server": server, 
-                "server_port": port,
-                "local_address": [`${account.v4}/32`, `${account.v6}/128`], 
-                "private_key": account.privateKey, 
-                "peer_public_key": account.peerPublicKey, 
-                "reserved": account.reserved, 
-                "mtu": 1280 
-            };
+            const wireguardOutbound = { "type": "wireguard", "tag": outboundTag, "server": server, "server_port": port,"local_address": [`${account.v4}/32`, `${account.v6}/128`], "private_key": account.privateKey, "peer_public_key": account.peerPublicKey, "reserved": account.reserved, "mtu": 1280 };
             singboxTemplate.outbounds.push(wireguardOutbound);
-            if (urltestOutbound) {
-                urltestOutbound.outbounds.push(outboundTag);
-            }
+            if (urltestOutbound) urltestOutbound.outbounds.push(outboundTag);
         });
-        
         const now = new Date(); 
         const name = `WG ${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
         const encodedName = encodeURIComponent(name);
@@ -1101,20 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const encodedPeerPubKey = encodeURIComponent(account.peerPublicKey); 
         const encodedPrivateKey = encodeURIComponent(account.privateKey);
         const nekoboxReserved = btoa(String.fromCharCode(...account.reserved));
-        
-        const nekoboxConfig = { 
-            "type": "wireguard", 
-            "tag": "proxy", 
-            "server": server, 
-            "server_port": port,
-            "private_key": account.privateKey, 
-            "peer_public_key": account.peerPublicKey, 
-            "local_address": [ `${account.v4}/32`, `${account.v6}/128` ], 
-            "mtu": 1280, 
-            "reserved": nekoboxReserved, 
-            "pre_shared_key": "", 
-            "domain_strategy": "" 
-        };
+        const nekoboxConfig = { "type": "wireguard", "tag": "proxy", "server": server, "server_port": port, "private_key": account.privateKey, "peer_public_key": account.peerPublicKey, "local_address": [ `${account.v4}/32`, `${account.v6}/128` ], "mtu": 1280, "reserved": nekoboxReserved, "pre_shared_key": "", "domain_strategy": "" };
         
         return {
             standard: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${endpoint}`,
@@ -1128,57 +761,109 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
+    // ================================================================
+    // RENDERING FUNCTIONS (MODIFIED FOR BETTER UX)
+    // ================================================================
     function renderResults() {
-        resultsDiv.innerHTML = `<div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 md:p-8 mt-8 shadow-2xl"><h2 class="text-2xl font-bold mb-6 text-white text-center">${t('configurationsReady')}</h2><div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="lg:col-span-2"><h3 class="text-xl font-bold mb-4 text-center text-gray-300">${t('configurationPreview')}</h3><div class="border-b border-gray-700 mb-4"><nav class="flex flex-wrap -mb-px" aria-label="Tabs"><button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">${t('standardWG')}</button><button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">${t('amneziaWG')}</button><button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">${t('singBox')}</button><button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-app-urls">${t('appUrls')}</button></nav></div><div id="tab-content-area"></div></div><div class="flex flex-col items-center justify-center pt-6 lg:pt-0"><h3 id="qrcode-title" class="font-semibold text-lg mb-2 text-orange-400"></h3><div id="qrcode-wrapper" class="p-4 bg-white rounded-lg shadow-md"><div id="qrcode"></div><p id="qrcode-message" class="hidden text-center text-gray-700 p-8 font-medium">${t('qrCodeNotScannable')}</p></div></div></div></div>`;
+        const resultsOutputDiv = document.getElementById('results-output');
+        const resultsSidebarDiv = document.getElementById('results-sidebar');
+
+        resultsOutputDiv.innerHTML = `
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 md:p-8 shadow-2xl h-full">
+            <h2 class="text-2xl font-bold mb-4 text-white text-center">${t('configurationsReady')}</h2>
+            <div class="border-b border-gray-700 mb-4">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-orange-500 text-orange-400" data-tab-target="#tab-standard">${t('standardWG')}</button>
+                    <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-amnezia">${t('amneziaWG')}</button>
+                    <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500" data-tab-target="#tab-singbox">${t('singBox')}</button>
+                    <button class="uppercase tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-500 mx-4" data-tab-target="#tab-app-urls">${t('appUrls')}</button>
+                </nav>
+            </div>
+            <div id="tab-content-area"></div>
+        </div>`;
+
+        resultsSidebarDiv.innerHTML = `
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl text-center">
+            <h3 id="qrcode-title" class="font-semibold text-lg mb-4 text-orange-400"></h3>
+            <div id="qrcode-wrapper" class="p-4 bg-white rounded-lg shadow-md inline-block">
+                <div id="qrcode"></div>
+                <p id="qrcode-message" class="hidden text-center text-gray-700 p-8 font-medium">${t('qrCodeNotScannable')}</p>
+            </div>
+        </div>
+        <div id="settings-panel" class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl space-y-6 sticky top-4">
+            ${createEndpointSelectorHTML('endpoint-selector-main')}
+            ${createDnsSelectorHTML()}
+        </div>
+    `;
+
         populateTabs();
         updateDisplayedConfigs();
-        if (resultsDiv.classList.contains('hidden')) { 
-            resultsDiv.classList.remove('hidden'); 
-            setTimeout(() => { 
-                resultsDiv.style.opacity = 1; 
-                resultsDiv.style.transform = 'translateY(0)'; 
-            }, 10); 
+
+        // NEW: Synchronize selectors with current state
+        syncSelectors();
+
+        if (resultsDiv.classList.contains('hidden')) {
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.style.opacity = 0;
+            setTimeout(() => {
+                resultsDiv.style.transition = 'opacity 0.5s ease-in-out';
+                resultsDiv.style.opacity = 1;
+            }, 10);
         }
+        tippy('[data-tippy-content]', { theme: 'dark-orange', animation: 'scale-subtle' });
     }
-    
+
     function populateTabs() {
         const tabContentArea = document.getElementById('tab-content-area');
         const templates = [ 
-            { id: "standard", title: "Standard WireGuard Format", color: "blue", showSelector: true }, 
-            { id: "amnezia", title: "AmneziaWG Format (Jitter)", color: "purple", showSelector: true }, 
-            { id: "singbox", title: "sing-box Format (URL-Test)", color: "teal", showSelector: false }, 
-            { id: "app-urls", title: "Client-Specific URLs", color: "green", showSelector: false } 
+            { id: "standard", title: t('standardWireGuardFormat'), color: "blue" }, 
+            { id: "amnezia", title: t('amneziaWGFormat'), color: "purple" }, 
+            { id: "singbox", title: t('singBoxFormat'), color: "teal" }, 
+            { id: "app-urls", title: t('clientSpecificUrls'), color: "green" } 
         ];
         let html = '';
         templates.forEach(data => {
             if (data.id === 'app-urls') {
-                html += `<div id="tab-app-urls" class="tab-pane hidden space-y-4"><p class="text-sm text-center text-gray-400">${t('clickForQrCode')}</p>${createAppContentSectionHTML('nekobox', 'NekoBox (Android)')}${createAppContentSectionHTML('v2rayng', 'V2RayNG (Android)')}${createAppContentSectionHTML('streisand', 'Streisand (iOS)')}${createAppContentSectionHTML('shadowrocket-std', 'Shadowrocket - Standard (iOS)')}${createAppContentSectionHTML('shadowrocket-amz', 'Shadowrocket - Amnezia (iOS)')}</div>`;
+                html += `<div id="tab-app-urls" class="tab-pane hidden space-y-4"><p class="text-sm text-center text-gray-400">${t('clickForQrCode')}</p>${createAppContentSectionHTML('nekobox', t('nekoBoxAndroid'))}${createAppContentSectionHTML('v2rayng', t('v2RayNGAndroid'))}${createAppContentSectionHTML('streisand', t('streisandiOS'))}${createAppContentSectionHTML('shadowrocket-std', t('shadowrocketStandard'))}${createAppContentSectionHTML('shadowrocket-amz', t('shadowrocketAmnezia'))}</div>`;
             } else {
-                const endpointSelectorHtml = data.showSelector ? createEndpointSelectorHTML(`endpoint-selector-${data.id}`) : '';
-                const dnsSelectorHtml = data.showSelector ? createDnsSelectorHTML() : '';
-                html += `<div id="tab-${data.id}" class="tab-pane ${data.id !== 'standard' ? 'hidden' : ''}"><h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title}</h3>${createActionButtons('', data.color, data.id)}<pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[300px]"><code></code></pre>${endpointSelectorHtml}${dnsSelectorHtml}${createDownloadLinks(data.id)}</div>`;
+                const titleTooltip = data.id === 'amnezia' ? `<span class="inline-block" data-tippy-content="Uses jitter parameters to obfuscate traffic, may help bypass some restrictions."><svg class="w-4 h-4 inline-block ml-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg></span>` : '';
+                html += `
+                    <div id="tab-${data.id}" class="tab-pane ${data.id !== 'standard' ? 'hidden' : ''}">
+                        <h3 class="font-semibold text-lg mb-2 text-orange-400">${data.title} ${titleTooltip}</h3>
+                        ${createActionButtons('', data.color, data.id)}
+                        <pre class="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm break-all max-h-[300px]"><code></code></pre>
+                        ${createDownloadLinks(data.id)}
+                    </div>`;
             }
         });
         tabContentArea.innerHTML = html;
-        syncSelectors();
         const firstUrlSection = tabContentArea.querySelector('.content-section');
         if(firstUrlSection) firstUrlSection.classList.add('active');
     }
     
+    // ================================================================
+    // ASYNC PROCESSES & STATE MANAGEMENT
+    // ================================================================
     async function startNewGeneration(button) { 
         const originalText = button.innerHTML; 
         button.disabled = true; 
-        button.innerHTML = loadingButtonHTML; 
+        button.innerHTML = loadingButtonHTML.replace(t('sharing'), t('registeringAccount')); 
         try { 
             const newAccount = await fetchAccountFromWorker(); 
-            let name = prompt(t('enterName'), t('configNamePlaceholder', { date: new Date().toLocaleString() })); 
-            if (!name) name = t('configNamePlaceholder', { date: new Date().toLocaleString() }); 
+            const name = await showModal({
+                title: t('enterName'),
+                description: "This name will help you identify the configuration later.",
+                placeholder: t('configNamePlaceholder'),
+                confirmText: "Save Config"
+            });
+            if (name === null) return;
+            const finalName = name || t('configNamePlaceholder');
             const accounts = getSavedAccounts(); 
-            accounts.push({ name, account: newAccount }); 
+            accounts.push({ name: finalName, account: newAccount }); 
             saveAccounts(accounts); 
             setStatus(t('newConfigSaved')); 
             await initialize(); 
-            savedConfigsDropdown.selectedIndex = accounts.length - 1; 
+            savedConfigsDropdown.value = accounts.length - 1;
             await loadSelectedConfig(false); 
         } catch (error) { 
             console.error("New generation process failed:", error); 
@@ -1190,21 +875,28 @@ document.addEventListener('DOMContentLoaded', () => {
         } 
     }
     
-    async function loadSelectedConfig(showStatus = true) { 
-        const selectedIndex = savedConfigsDropdown.selectedIndex; 
-        const accounts = getSavedAccounts(); 
-        if (selectedIndex < 0 || selectedIndex >= accounts.length) { 
-            resultsDiv.classList.add('hidden'); 
-            return; 
-        } 
-        if (showStatus) setStatus(t('loadingConfig')); 
-        currentAccount = accounts[selectedIndex].account; 
-        allFetchedEndpoints = await fetchAllEndpoints(); 
-        // Default to first IPv4 endpoint, or first IPv6 if no IPv4 available
-        currentEndpoint = allFetchedEndpoints.ipv4.length > 0 ? allFetchedEndpoints.ipv4[0] : 
-                         allFetchedEndpoints.ipv6.length > 0 ? allFetchedEndpoints.ipv6[0] : '';
-        renderResults(); 
-        if (showStatus) setTimeout(() => setStatus(""), 3000); 
+    async function loadSelectedConfig(showStatus = true) {
+        const selectedIndex = savedConfigsDropdown.value;
+        const accounts = getSavedAccounts();
+        if (selectedIndex < 0 || selectedIndex >= accounts.length) {
+            resultsDiv.classList.add('hidden');
+            return;
+        }
+        if (showStatus) setStatus(t('loadingConfig'));
+        currentAccount = accounts[selectedIndex].account;
+        allFetchedEndpoints = await fetchAllEndpoints();
+
+        // Ensure we have a valid endpoint
+        if (allFetchedEndpoints.ipv4.length > 0) {
+            currentEndpoint = allFetchedEndpoints.ipv4[0];
+        } else if (allFetchedEndpoints.ipv6.length > 0) {
+            currentEndpoint = allFetchedEndpoints.ipv6[0];
+        } else {
+            currentEndpoint = ''; // Fallback
+        }
+
+        renderResults();
+        if (showStatus) setTimeout(() => setStatus(""), 3000);
     }
     
     function showManagerUI(accounts) { 
@@ -1231,38 +923,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } 
     }
     
-    generateBtn.addEventListener('click', e => startNewGeneration(e.currentTarget));
-    generateNewBtn.addEventListener('click', e => startNewGeneration(e.currentTarget));
-    savedConfigsDropdown.addEventListener('change', () => loadSelectedConfig());
-    updateEndpointsBtn.addEventListener('click', () => loadSelectedConfig());
-    deleteConfigBtn.addEventListener('click', () => { 
-        const selectedIndex = savedConfigsDropdown.selectedIndex; 
-        const accounts = getSavedAccounts(); 
-        if (selectedIndex < 0) return; 
-        if (confirm(t('deleteConfirm', { name: accounts[selectedIndex].name }))) { 
-            accounts.splice(selectedIndex, 1); 
-            saveAccounts(accounts); 
-            setStatus(t('configurationDeleted')); 
-            initialize(); 
-        } 
-    });
-    renameConfigBtn.addEventListener('click', () => { 
-        const selectedIndex = savedConfigsDropdown.selectedIndex; 
-        const accounts = getSavedAccounts(); 
-        if (selectedIndex < 0) return; 
-        const oldName = accounts[selectedIndex].name; 
-        const newName = prompt(t('enterNewName'), oldName); 
-        if (newName && newName !== oldName) { 
-            accounts[selectedIndex].name = newName; 
-            saveAccounts(accounts); 
-            setStatus(t('configurationRenamed')); 
-            savedConfigsDropdown.options[selectedIndex].textContent = newName; 
-        } 
-    });
-    
-    function escapeHtml(text) { 
-        return text ? text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">") : ''; 
-    }
+    // ================================================================
+    // HTML ELEMENT CREATION
+    // ================================================================
+    function escapeHtml(text) { return text ? text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">") : ''; }
     
     function createAppContentSectionHTML(id, title) { 
         const isJson = id === 'nekobox'; 
@@ -1271,126 +935,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function createDnsSelectorHTML() { 
-        const defaultDnsOptions = { 
-            '1.1.1.1': t('cloudflare'), 
-            '8.8.8.8, 8.8.4.4': t('google'), 
-            '9.9.9.9': t('quad9'), 
-            '208.67.222.222, 208.67.220.220': t('opendns'), 
-        }; 
-        const customDnsList = getCustomDnsList(); 
-        let selectHtml = `<select class="dns-select block w-full flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-orange-500 focus:border-orange-500"><optgroup label="Defaults">`; 
-        for (const [value, text] of Object.entries(defaultDnsOptions)) { 
-            selectHtml += `<option value="${value}">${text}</option>`; 
-        } 
-        selectHtml += `</optgroup>`; 
-        if (customDnsList.length > 0) { 
-            selectHtml += `<optgroup label="Custom">`; 
-            customDnsList.forEach(item => { 
-                selectHtml += `<option value="${item.value}" data-custom-dns="true">${item.name} (${item.value})</option>`; 
-            }); 
-            selectHtml += `</optgroup>`; 
-        } 
-        selectHtml += `<option value="custom">${t('custom')}</option></select>`; 
+        const defaultDnsOptions = { '1.1.1.1': t('cloudflare'), '8.8.8.8, 8.8.4.4': t('google'), '9.9.9.9': t('quad9'), '208.67.222.222, 208.67.220.220': t('opendns') };
+        const customDnsList = getCustomDnsList();
+        let selectHtml = `<div class="space-y-4"><h4 class="text-lg font-semibold text-gray-200 text-center">${t('selectDns')}</h4><div class="dns-container flex flex-col sm:flex-row gap-2 items-center"><select class="dns-select block w-full flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-orange-500 focus:border-orange-500"><optgroup label="Defaults">`;
+        for (const [value, text] of Object.entries(defaultDnsOptions)) { selectHtml += `<option value="${value}">${text}</option>`; }
+        selectHtml += `</optgroup>`;
+        if (customDnsList.length > 0) {
+            selectHtml += `<optgroup label="Custom">`;
+            customDnsList.forEach(item => { selectHtml += `<option value="${item.value}" data-custom-dns="true">${item.name} (${item.value})</option>`; });
+            selectHtml += `</optgroup>`;
+        }
+        selectHtml += `<option value="custom">${t('custom')}</option></select>`;
         const customInputHtml = `<input type="text" placeholder="e.g., 1.0.0.1" class="dns-custom-input hidden w-full sm:w-1/3 bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-orange-500 focus:border-orange-500">`; 
         const saveButtonHtml = `<button class="save-custom-dns-btn hidden bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">${t('save')}</button>`; 
         const deleteButtonHtml = `<button class="delete-custom-dns-btn hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">${t('delete')}</button>`; 
-        return `<div class="mt-6 pt-4 border-t border-gray-700"><h4 class="text-base font-semibold text-gray-300 mb-3 text-center">${t('selectDns')}</h4><div class="dns-container flex flex-col sm:flex-row gap-2 items-center">${selectHtml}${customInputHtml}${saveButtonHtml}${deleteButtonHtml}</div></div>`; 
+        return `${selectHtml}${customInputHtml}${saveButtonHtml}${deleteButtonHtml}</div></div>`;
     }
     
     function createDownloadLinks(clientType) { 
-        const links = { 
-            standard: [{ name: t('windows'), url: 'https://download.wireguard.com/windows-client/wireguard-installer.exe' }, { name: t('android'), url: 'https://play.google.com/store/apps/details?id=com.wireguard.android' }, { name: t('ios'), url: 'https://apps.apple.com/us/app/wireguard/id1441195209' }, { name: t('linux'), url: 'https://www.wireguard.com/install/' },], 
-            amnezia: [{ name: t('windows'), url: 'https://github.com/amnezia-vpn/amneziawg-windows-client/releases/latest' }, { name: t('android'), url: 'https://play.google.com/store/apps/details?id=org.amnezia.awg&hl=fa' }, { name: t('ios'), url: 'https://apps.apple.com/de/app/amneziawg/id6478942365' }, { name: t('linux'), url: 'https://github.com/amnezia-vpn/amneziawg-linux-kernel-module' },], 
-            singbox: [{ name: t('windows'), url: 'https://github.com/hiddify/hiddify-app/releases/latest' }, { name: t('android'), url: 'https://github.com/SagerNet/sing-box-for-android/releases/latest' }, { name: t('ios'), url: 'https://apps.apple.com/us/app/sing-box-vt/id6673731168' }, { name: t('linux'), url: 'https://github.com/SagerNet/sing-box/releases/latest' },] 
-        }; 
+        const links = { standard: [{ name: t('windows'), url: 'https://download.wireguard.com/windows-client/wireguard-installer.exe' }, { name: t('android'), url: 'https://play.google.com/store/apps/details?id=com.wireguard.android' }, { name: t('ios'), url: 'https://apps.apple.com/us/app/wireguard/id1441195209' }, { name: t('linux'), url: 'https://www.wireguard.com/install/' }], amnezia: [{ name: t('windows'), url: 'https://github.com/amnezia-vpn/amneziawg-windows-client/releases/latest' }, { name: t('android'), url: 'https://play.google.com/store/apps/details?id=org.amnezia.awg&hl=fa' }, { name: t('ios'), url: 'https://apps.apple.com/de/app/amneziawg/id6478942365' }, { name: t('linux'), url: 'https://github.com/amnezia-vpn/amneziawg-linux-kernel-module' }], singbox: [{ name: t('windows'), url: 'https://github.com/hiddify/hiddify-app/releases/latest' }, { name: t('android'), url: 'https://github.com/SagerNet/sing-box-for-android/releases/latest' }, { name: t('ios'), url: 'https://apps.apple.com/us/app/sing-box-vt/id6673731168' }, { name: t('linux'), url: 'https://github.com/SagerNet/sing-box/releases/latest' }] };
         const clientLinks = links[clientType]; 
         if (!clientLinks) return ''; 
-        let linksHtml = '<div class="mt-6 pt-4 border-t border-gray-700">'; 
-        linksHtml += `<h4 class="text-sm font-semibold text-gray-400 mb-3 text-center">${t('downloadClient')}</h4>`; 
-        linksHtml += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">'; 
-        clientLinks.forEach(link => { 
-            linksHtml += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="block bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors">${link.name}</a>`; 
-        }); 
-        linksHtml += '</div></div>'; 
-        return linksHtml; 
+        let linksHtml = `<div class="mt-6 pt-4 border-t border-gray-700"><h4 class="text-sm font-semibold text-gray-400 mb-3 text-center">${t('downloadClient')}</h4><div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">`; 
+        clientLinks.forEach(link => { linksHtml += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="block bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors">${link.name}</a>`; }); 
+        return linksHtml + '</div></div>'; 
     }
     
     function createEndpointSelectorHTML(groupName) { 
-        let html = `<div class="mt-6 pt-4 border-t border-gray-700"><h4 class="text-base font-semibold text-gray-300 mb-3 text-center">${t('selectEndpoint')}</h4>`;
-        
-        // Create tabbed interface for IPv4 and IPv6
-        html += `<div class="endpoint-tabs flex mb-2">`;
-        html += `<button class="endpoint-tab active" data-type="ipv4">${t('ipv4')}</button>`;
-        html += `<button class="endpoint-tab" data-type="ipv6">${t('ipv6')}</button>`;
-        html += `</div>`;
-        
-        // Add test latency button
-        html += `<div class="flex justify-center mb-2">
-            <button class="test-latency-btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">
-                ${t('testLatency')}
-            </button>
-        </div>`;
-        
-        // IPv4 tab content
-        html += `<div class="endpoint-tab-content ipv4" data-type="ipv4">`;
-        html += `<p class="text-sm text-center text-gray-400 mb-4"><span class="font-bold text-orange-400">${t('recommended')}:</span> ${t('recommendedText')}</p>`;
-        html += `<div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
-        
+        let html = `<div class="space-y-4"><h4 class="text-lg font-semibold text-gray-200 text-center">${t('selectEndpoint')}</h4>`;
+        html += `<div class="endpoint-tabs flex mb-2"><button class="endpoint-tab active" data-type="ipv4">${t('ipv4')}</button><button class="endpoint-tab" data-type="ipv6">${t('ipv6')}</button></div>`;
+        html += `<div class="endpoint-tab-content ipv4" data-type="ipv4"><p class="text-sm text-center text-gray-400 mb-4"><span class="font-bold text-orange-400">${t('recommended')}:</span> ${t('recommendedText')}</p><div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
         if (allFetchedEndpoints.ipv4.length > 0) {
-            allFetchedEndpoints.ipv4.forEach(ep => {
-                const isRecommended = ep.startsWith('8.');
-                const labelClass = isRecommended ? 'text-orange-300' : 'text-gray-300';
-                const recommendText = isRecommended ? '<span class="text-xs font-sans font-bold text-orange-500 ml-2">(Recommended)</span>' : '';
-                
-                html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 ${labelClass} font-mono text-sm">${ep} ${recommendText}</span><span class="endpoint-latency latency-indicator latency-unknown" title="${t('latencyUnknown')}"></span></label>`;
-            });
-        } else {
-            html += `<p class="text-center text-gray-400 py-4">${t('noIPv4Endpoints')}</p>`;
-        }
+            allFetchedEndpoints.ipv4.forEach(ep => { html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 text-gray-300 font-mono text-sm flex-grow">${ep}</span><span class="endpoint-latency latency-indicator latency-unknown" title="${t('latencyUnknown')}"></span></label>`; });
+        } else { html += `<p class="text-center text-gray-400 py-4">${t('noIPv4Endpoints')}</p>`; }
         html += `</div></div>`;
-        
-        // IPv6 tab content
-        html += `<div class="endpoint-tab-content ipv6 hidden" data-type="ipv6">`;
-        html += `<p class="text-sm text-center text-gray-400 mb-4">${t('ipv6Text')}</p>`;
-        html += `<div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
-        
+        html += `<div class="endpoint-tab-content ipv6 hidden" data-type="ipv6"><p class="text-sm text-center text-gray-400 mb-4">${t('ipv6Text')}</p><div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
         if (allFetchedEndpoints.ipv6.length > 0) {
-            allFetchedEndpoints.ipv6.forEach(ep => {
-                html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 text-gray-300 font-mono text-sm">${ep}</span><span class="endpoint-latency latency-indicator latency-unknown" title="${t('latencyUnknown')}"></span></label>`;
-            });
-        } else {
-            html += `<p class="text-center text-gray-400 py-4">${t('noIPv6Endpoints')}</p>`;
-        }
+            allFetchedEndpoints.ipv6.forEach(ep => { html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 text-gray-300 font-mono text-sm flex-grow">${ep}</span><span class="endpoint-latency latency-indicator latency-unknown" title="${t('latencyUnknown')}"></span></label>`; });
+        } else { html += `<p class="text-center text-gray-400 py-4">${t('noIPv6Endpoints')}</p>`; }
         html += `</div></div>`;
-        
-        html += `</div>`;
-        return html;
+        html += `<div class="text-center space-y-3 pt-4 border-t border-gray-600/50">
+            <button class="test-latency-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">${t('testLatency')}</button>
+            <div class="flex justify-center items-center gap-4 text-xs text-gray-400">
+                <span class="flex items-center gap-1.5"><span class="latency-indicator latency-fast"></span> ${t('latencyFast')}</span>
+                <span class="flex items-center gap-1.5"><span class="latency-indicator latency-medium"></span> ${t('latencyMedium')}</span>
+                <span class="flex items-center gap-1.5"><span class="latency-indicator latency-slow"></span> ${t('latencySlow')}</span>
+            </div>
+        </div>`;
+        return html + '</div>';
     }
     
     function createActionButtons(content, color, id) { 
         const hasDownload = id === 'standard' || id === 'amnezia'; 
         const filename = id === 'standard' ? 'wg-config.conf' : 'amnezia-config.conf'; 
         let buttonsHtml = `<div class="flex space-x-2 mb-2"><button class="copy-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg">${t('copy')}</button>`; 
-        if (hasDownload) { 
-            buttonsHtml += `<button class="download-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-filename="${filename}">${t('downloadConf')}</button>`; 
-        } 
+        if (hasDownload) { buttonsHtml += `<button class="download-btn flex-1 bg-${color}-600 hover:bg-${color}-700 text-white font-semibold py-2 px-4 rounded-lg" data-filename="${filename}">${t('downloadConf')}</button>`; } 
         buttonsHtml += `<button class="share-btn flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg">${t('shareLink')}</button></div><div class="share-result-container hidden mt-2"><input type="text" readonly class="w-full bg-gray-900 border border-gray-600 rounded-md p-2 text-sm text-gray-300"><button class="copy-link-btn w-full mt-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">${t('linkCopied')}</button></div>`; 
         return buttonsHtml; 
     }
     
     function updateQrCode(content, title) { 
-        const qrcodeContainer = document.getElementById('qrcode'), 
-        qrcodeTitle = document.getElementById('qrcode-title'), 
-        qrcodeMessage = document.getElementById('qrcode-message'); 
+        const qrcodeContainer = document.getElementById('qrcode'), qrcodeTitle = document.getElementById('qrcode-title'), qrcodeMessage = document.getElementById('qrcode-message'); 
         qrcodeTitle.textContent = title; 
         if (content) { 
             qrcodeContainer.innerHTML = ''; 
-            new QRCode(qrcodeContainer, { 
-                text: content, 
-                width: 200, 
-                height: 200, 
-                correctLevel : QRCode.CorrectLevel.L 
-            }); 
+            new QRCode(qrcodeContainer, { text: content, width: 200, height: 200, correctLevel : QRCode.CorrectLevel.L }); 
             qrcodeContainer.classList.remove('hidden'); 
             qrcodeMessage.classList.add('hidden'); 
         } else { 
@@ -1401,22 +1010,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function syncSelectors() {
-        document.querySelectorAll('input[name^="endpoint-selector-"]').forEach(radio => { 
-            radio.checked = radio.value === currentEndpoint; 
+        // Synchronize endpoint selectors
+        document.querySelectorAll('input[name="endpoint-selector-main"]').forEach(radio => {
+            radio.checked = radio.value === currentEndpoint;
         });
-        document.querySelectorAll('.dns-select').forEach(sel => {
-            sel.value = currentDns;
-            const isCustom = !Array.from(sel.options).some(opt => opt.value === currentDns);
-            if (isCustom) { sel.value = 'custom'; }
-            const isCustomSelected = sel.value === 'custom';
-            const container = sel.closest('.dns-container');
+
+        // Synchronize DNS selector
+        const dnsSelect = document.querySelector('#settings-panel .dns-select');
+        if (dnsSelect) {
+            dnsSelect.value = currentDns;
+            const isCustom = !Array.from(dnsSelect.options).some(opt => opt.value === currentDns);
+            if (isCustom) dnsSelect.value = 'custom';
+
+            const isCustomSelected = dnsSelect.value === 'custom';
+            const container = dnsSelect.closest('.dns-container');
             container.querySelector('.dns-custom-input').classList.toggle('hidden', !isCustomSelected);
-            if (isCustomSelected) { container.querySelector('.dns-custom-input').value = currentDns; }
-            const selectedOption = Array.from(sel.options).find(opt => opt.value === sel.value);
+            if (isCustomSelected) container.querySelector('.dns-custom-input').value = currentDns;
+
+            const selectedOption = Array.from(dnsSelect.options).find(opt => opt.value === dnsSelect.value);
             const isDataCustom = selectedOption && selectedOption.dataset.customDns === 'true';
             container.querySelector('.save-custom-dns-btn').classList.toggle('hidden', !isCustomSelected);
             container.querySelector('.delete-custom-dns-btn').classList.toggle('hidden', !isDataCustom);
-        });
+        }
     }
     
     function updateDisplayedConfigs() {
@@ -1426,16 +1041,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const tabPane = document.getElementById(`tab-${id}`); if (!tabPane) return;
             const newContent = generatedConfigs[id];
             tabPane.querySelector('code').textContent = newContent;
-            const copyBtn = tabPane.querySelector('.copy-btn'); if (copyBtn) copyBtn.dataset.clipboardText = escape(newContent);
-            const downloadBtn = tabPane.querySelector('.download-btn'); if (downloadBtn) downloadBtn.dataset.downloadContent = escape(newContent);
-            const shareBtn = tabPane.querySelector('.share-btn'); if(shareBtn) shareBtn.dataset.shareContent = escape(newContent);
+            tabPane.querySelector('.copy-btn')?.setAttribute('data-clipboard-text', escape(newContent));
+            tabPane.querySelector('.download-btn')?.setAttribute('data-download-content', escape(newContent));
+            tabPane.querySelector('.share-btn')?.setAttribute('data-share-content', escape(newContent));
             tabPane.querySelector('.share-result-container').classList.add('hidden');
         });
         Object.entries(idToConfigKeyMap).forEach(([sectionId, configKey]) => {
             const input = document.getElementById(`${sectionId.replace('-section', '')}-content-input`); if (input) {
                 const newContent = generatedConfigs[configKey]; input.value = newContent;
                 const section = document.getElementById(sectionId);
-                const copyBtn = section.querySelector('.copy-btn'); if (copyBtn) copyBtn.dataset.clipboardText = escape(newContent);
+                section.querySelector('.copy-btn')?.setAttribute('data-clipboard-text', escape(newContent));
             }
         });
         const activePane = document.querySelector('.tab-pane:not(.hidden)');
@@ -1459,131 +1074,164 @@ document.addEventListener('DOMContentLoaded', () => {
                 const singboxShareInput = document.querySelector('#tab-singbox .share-result-container input'); 
                 if (singboxShareInput && singboxShareInput.value) { 
                     updateQrCode(singboxShareInput.value, t('qrCodeSingBox')); 
-                } else { 
-                    updateQrCode(null, t('qrCodeNotScannable')); 
-                } 
+                } else { updateQrCode(null, t('qrCodeNotScannable')); } 
                 break; 
             }
             default: updateQrCode(null, t('qrCodeNotScannable')); break;
         }
     }
     
+    // ================================================================
+    // EVENT LISTENERS
+    // ================================================================
+    generateBtn.addEventListener('click', e => startNewGeneration(e.currentTarget));
+    generateNewBtn.addEventListener('click', e => startNewGeneration(e.currentTarget));
+    savedConfigsDropdown.addEventListener('change', () => loadSelectedConfig());
+    updateEndpointsBtn.addEventListener('click', () => loadSelectedConfig());
+    
+    deleteConfigBtn.addEventListener('click', () => { 
+        const selectedIndex = savedConfigsDropdown.selectedIndex; 
+        const accounts = getSavedAccounts(); 
+        if (selectedIndex < 0) return; 
+        if (confirm(t('deleteConfirm', { name: accounts[selectedIndex].name }))) { 
+            accounts.splice(selectedIndex, 1); 
+            saveAccounts(accounts); 
+            setStatus(t('configurationDeleted')); 
+            initialize(); 
+        } 
+    });
+
+    renameConfigBtn.addEventListener('click', async () => { 
+        const selectedIndex = savedConfigsDropdown.selectedIndex; 
+        const accounts = getSavedAccounts(); 
+        if (selectedIndex < 0) return; 
+        const oldName = accounts[selectedIndex].name; 
+        const newName = await showModal({
+            title: t('enterNewName'),
+            description: `Current name: "${oldName}"`,
+            initialValue: oldName,
+            confirmText: "Rename"
+        });
+        if (newName && newName !== oldName) { 
+            accounts[selectedIndex].name = newName; 
+            saveAccounts(accounts); 
+            setStatus(t('configurationRenamed')); 
+            savedConfigsDropdown.options[selectedIndex].textContent = newName; 
+        } 
+    });
+    
     resultsDiv.addEventListener('click', async e => {
         const target = e.target;
         const button = target.closest('button');
         const contentSection = target.closest('.content-section');
+        
         if (contentSection) { 
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); 
             contentSection.classList.add('active'); 
             updateQrCodeForActiveTab('tab-app-urls'); 
         }
+        
         if (button) {
             if (button.classList.contains('copy-btn')) { 
                 const textToCopy = unescape(button.dataset.clipboardText); 
                 const originalText = button.innerHTML; 
-                navigator.clipboard.writeText(textToCopy).then(() => { 
-                    button.innerHTML = t('copied'); 
-                    setTimeout(() => { button.innerHTML = originalText; }, 2000); 
-                }); 
+                navigator.clipboard.writeText(textToCopy).then(() => { button.innerHTML = t('copied'); setTimeout(() => { button.innerHTML = originalText; }, 2000); }); 
                 return; 
             }
             if (button.classList.contains('download-btn')) { 
                 const content = unescape(button.dataset.downloadContent); 
-                const filename = button.dataset.filename; 
                 const blob = new Blob([content], { type: 'application/octet-stream' }); 
                 const a = document.createElement('a'); 
                 a.href = URL.createObjectURL(blob); 
-                a.download = filename; 
-                document.body.appendChild(a); 
-                a.click(); 
-                URL.revokeObjectURL(a.href); 
-                document.body.removeChild(a); 
+                a.download = button.dataset.filename; 
+                document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); document.body.removeChild(a); 
                 return; 
             }
             if (button.classList.contains('share-btn')) { 
                 const contentToShare = unescape(button.dataset.shareContent); 
                 const originalText = button.innerHTML; 
-                button.disabled = true; 
-                button.innerHTML = loadingButtonHTML; 
+                button.disabled = true; button.innerHTML = loadingButtonHTML; 
                 try { 
                     const result = await shzAl.uploadPaste(contentToShare, { expiration: '1h' }); 
-                    const shareUrl = result.url; 
-                    const container = button.closest('.tab-pane').querySelector('.share-result-container'); 
-                    container.querySelector('input').value = shareUrl; 
+                    const container = button.closest('div').nextElementSibling;
+                    container.querySelector('input').value = result.url; 
                     container.classList.remove('hidden'); 
-                    const parentPane = button.closest('.tab-pane'); 
-                    if (parentPane && parentPane.id === 'tab-singbox') { 
-                        updateQrCode(shareUrl, t('qrCodeSingBox')); 
-                    } 
-                } catch (error) { 
-                    console.error("Share failed:", error); 
-                    alert(t('shareFailed')); 
-                } finally { 
-                    button.disabled = false; 
-                    button.innerHTML = originalText; 
-                } 
+                    if (button.closest('.tab-pane')?.id === 'tab-singbox') updateQrCode(result.url, t('qrCodeSingBox')); 
+                } catch (error) { console.error("Share failed:", error); alert(t('shareFailed')); 
+                } finally { button.disabled = false; button.innerHTML = originalText; } 
                 return; 
             }
             if (button.classList.contains('copy-link-btn')) { 
                 const linkToCopy = button.previousElementSibling.value; 
                 const originalText = button.innerHTML; 
-                navigator.clipboard.writeText(linkToCopy).then(() => { 
-                    button.innerHTML = t('linkCopied'); 
-                    setTimeout(() => { button.innerHTML = originalText; }, 2000); 
-                }); 
+                navigator.clipboard.writeText(linkToCopy).then(() => { button.innerHTML = t('linkCopied'); setTimeout(() => { button.innerHTML = originalText; }, 2000); }); 
                 return; 
             }
             if (button.classList.contains('save-custom-dns-btn')) { 
                 const container = button.closest('.dns-container'); 
                 const customInput = container.querySelector('.dns-custom-input'); 
                 const dnsValue = customInput.value.trim(); 
-                if (!dnsValue) { 
-                    alert(t('enterCustomDns')); 
-                    return; 
-                } 
-                const dnsName = prompt(t('enterDnsName', { value: dnsValue }), t('myCustomDns')); 
+                if (!dnsValue) { alert(t('enterCustomDns')); return; } 
+                const dnsName = await showModal({ title: t('enterDnsName', { value: dnsValue }), placeholder: t('myCustomDns'), confirmText: t('save') });
                 if (dnsName) { 
                     const dnsList = getCustomDnsList(); 
-                    if (dnsList.some(item => item.value === dnsValue)) { 
-                        alert(t('dnsAlreadySaved')); 
-                        return; 
-                    } 
-                    dnsList.push({ name: dnsName, value: dnsValue }); 
+                    if (dnsList.some(item => item.value === dnsValue)) { alert(t('dnsAlreadySaved')); return; } 
+                    dnsList.push({ name: dnsName || t('myCustomDns'), value: dnsValue }); 
                     saveCustomDnsList(dnsList); 
-                    currentDns = dnsValue; 
-                    renderResults(); 
+                    currentDns = dnsValue; renderResults(); 
                 } 
             }
             if (button.classList.contains('delete-custom-dns-btn')) { 
-                const container = button.closest('.dns-container'); 
-                const dnsSelect = container.querySelector('.dns-select'); 
-                const dnsValueToDelete = dnsSelect.value; 
+                const dnsValueToDelete = button.closest('.dns-container').querySelector('.dns-select').value;
                 if (confirm(t('deleteDnsConfirm', { value: dnsValueToDelete }))) { 
                     let dnsList = getCustomDnsList(); 
                     dnsList = dnsList.filter(item => item.value !== dnsValueToDelete); 
                     saveCustomDnsList(dnsList); 
-                    currentDns = '1.1.1.1'; 
-                    renderResults(); 
+                    currentDns = '1.1.1.1'; renderResults(); 
                 } 
             }
-            if (button.classList.contains('test-latency-btn')) {
-                testAllEndpointsLatency();
+            if (button.classList.contains('test-latency-btn')) testAllEndpointsLatency();
+        }
+        
+        // Add this to your existing tab button click event listener
+        if (target.classList.contains('tab-btn')) {
+            const activeTabClasses = ['border-orange-500', 'text-orange-400'];
+            const inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove(...activeTabClasses);
+                btn.classList.add(...inactiveTabClasses);
+            });
+
+            target.classList.add(...activeTabClasses);
+            target.classList.remove(...inactiveTabClasses);
+
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+            const activePane = document.querySelector(target.dataset.tabTarget);
+            activePane.classList.remove('hidden');
+            updateQrCodeForActiveTab(activePane.id);
+
+            // NEW: Hide settings panel for Sing-Box and App URLs tabs
+            const activeTabId = target.dataset.tabTarget;
+            const resultsSidebar = document.getElementById('results-sidebar');
+            const settingsPanel = document.getElementById('settings-panel');
+
+            if (activeTabId === '#tab-singbox' || activeTabId === '#tab-app-urls') {
+                resultsSidebar.classList.remove('space-y-6');
+                settingsPanel.classList.add('hidden');
+            } else {
+                resultsSidebar.classList.add('space-y-6');
+                settingsPanel.classList.remove('hidden');
             }
         }
-        if (target.classList.contains('tab-btn')) {
-            const activeTabClasses = ['border-orange-500', 'text-orange-400'], 
-            inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
-            document.querySelectorAll('.tab-btn').forEach(btn => { 
-                btn.classList.remove(...activeTabClasses); 
-                btn.classList.add(...inactiveTabClasses); 
-            });
-            target.classList.add(...activeTabClasses); 
-            target.classList.remove(...inactiveTabClasses);
-            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
-            const activePane = document.querySelector(target.dataset.tabTarget); 
-            activePane.classList.remove('hidden');
-            syncSelectors();
-            updateQrCodeForActiveTab(activePane.id);
+        
+        if (target.classList.contains('endpoint-tab')) {
+            const tabContainer = target.closest('.endpoint-tabs');
+            const tabContents = tabContainer.parentElement.querySelectorAll('.endpoint-tab-content');
+            tabContainer.querySelectorAll('.endpoint-tab').forEach(tab => tab.classList.remove('active'));
+            target.classList.add('active');
+            const tabType = target.dataset.type;
+            tabContents.forEach(content => content.classList.toggle('hidden', content.dataset.type !== tabType));
         }
     });
     
@@ -1597,8 +1245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDisplayedConfigs();
         } else if (target.matches('.dns-select')) {
             const newDnsValue = target.value;
-            const isCustomSelected = newDnsValue === 'custom';
-            if (isCustomSelected) {
+            if (newDnsValue === 'custom') {
                 const container = target.closest('.dns-container');
                 container.querySelector('.dns-custom-input').classList.remove('hidden');
                 container.querySelector('.save-custom-dns-btn').classList.remove('hidden');
@@ -1611,69 +1258,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Handle endpoint tab switching
-    resultsDiv.addEventListener('click', e => {
-        const target = e.target;
-        if (target.classList.contains('endpoint-tab')) {
-            const tabContainer = target.closest('.endpoint-tabs');
-            const tabContents = tabContainer.nextElementSibling.parentElement.querySelectorAll('.endpoint-tab-content');
-            
-            // Update tab styles
-            tabContainer.querySelectorAll('.endpoint-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            target.classList.add('active');
-            
-            // Show/hide content
-            const tabType = target.dataset.type;
-            tabContents.forEach(content => {
-                if (content.dataset.type === tabType) {
-                    content.classList.remove('hidden');
-                } else {
-                    content.classList.add('hidden');
-                }
-            });
-        }
-    });
-    
     howToUseBtn.addEventListener('click', () => { 
-        // Determine the correct README URL based on current language
-        const readmeUrls = {
-            'fa': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.fa.md',
-            'en': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.en.md',
-            'ru': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.ru.md',
-            'zh': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.zh.md'
-        };
-        
-        const readmeUrl = readmeUrls[currentLanguage] || readmeUrls['en'];
-        
-        fetch(readmeUrl).then(response => { 
-            if (!response.ok) { 
-                throw new Error('README.md not found.'); 
-            } 
-            return response.text(); 
-        }).then(markdown => { 
-            howToUseContent.innerHTML = marked.parse(markdown); 
-            // Set direction based on current language
-            howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
-            howToUseModal.classList.remove('hidden'); 
-        }).catch(error => { 
-            console.error('Error fetching readme:', error); 
-            howToUseContent.innerHTML = `<p class="text-red-400">${t('helpFileError')}</p>`; 
-            // Set direction for error message too
-            howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
-            howToUseModal.classList.remove('hidden'); 
-        }); 
+        const readmeUrls = { 'fa': 'https://raw.githubusercontent.com/itsyebekhe/warp/main/README.fa.md', 'en': 'https://raw.githubusercontent.com/itsyebekhe/warp/main/README.en.md', 'ru': 'https://raw.githubusercontent.com/itsyebekhe/warp/main/README.ru.md', 'zh': 'https://raw.githubusercontent.com/itsyebekhe/warp/main/README.zh.md' };
+        fetch(readmeUrls[currentLanguage] || readmeUrls['en']).then(r => r.ok ? r.text() : Promise.reject('Not found'))
+            .then(markdown => { howToUseContent.innerHTML = marked.parse(markdown); })
+            .catch(e => { howToUseContent.innerHTML = `<p class="text-red-400">${t('helpFileError')}</p>`; })
+            .finally(() => { howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr'; howToUseModal.classList.remove('hidden'); });
     });
-    
     const closeModal = () => howToUseModal.classList.add('hidden');
     closeModalBtn.addEventListener('click', closeModal);
-    howToUseModal.addEventListener('click', (e) => { 
-        if (e.target === howToUseModal) closeModal(); 
-    });
-    document.addEventListener('keydown', (e) => { 
-        if (e.key === "Escape" && !howToUseModal.classList.contains('hidden')) closeModal(); 
-    });
+    howToUseModal.addEventListener('click', e => { if (e.target === howToUseModal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === "Escape" && !howToUseModal.classList.contains('hidden')) closeModal(); });
+    
+    // ================================================================
+    // MISC & UTILITY FUNCTIONS
+    // ================================================================
+    function fetchRepoStats() {fetch('https://api.github.com/repos/itsyebekhe/warp').then(r => r.json()).then(d => {document.getElementById('starCount').textContent = d.stargazers_count;document.getElementById('forkCount').textContent = d.forks_count;}).catch(e => {console.error('Error fetching repo stats:',e);document.getElementById('starCount').textContent = '?';document.getElementById('forkCount').textContent = '?';});}
+    function setupMirrorNotice() {
+        const currentHost = window.location.hostname, githubHost = 'itsyebekhe.github.io', pagesHost = 'warpgenerator.pages.dev', notice = document.getElementById('mirrorNotice'), link = document.getElementById('mirrorLink'), btn = document.getElementById('switchSiteBtn');
+        const show = (url) => { link.href = url; document.getElementById('mirrorLinkText').textContent = url.includes(pagesHost) ? pagesHost : `${githubHost}/warp`; notice.classList.remove('hidden'); notice.classList.add('mirror-notice'); };
+        if (currentHost === githubHost) show(`https://${pagesHost}/`);
+        else if (currentHost === pagesHost) show(`https://${githubHost}/warp/`);
+        if (btn) btn.addEventListener('click', () => window.location.href = link.href);
+    }
+    function parseEndpoint(endpoint) { if (endpoint.startsWith('[')) { const c=endpoint.indexOf(']'); return { server: endpoint.substring(1, c), port: parseInt(endpoint.substring(c + 2)), type: 'ipv6' }; } else { const [s, p] = endpoint.split(':'); return { server: s, port: parseInt(p), type: 'ipv4' }; } }
+    async function testEndpointLatency(endpoint) {
+        const { server, port } = parseEndpoint(endpoint); const url = `https://${server}:${port}/cdn-cgi/trace`;
+        try {
+            const s=performance.now(); const c=new AbortController(); const t=setTimeout(()=>c.abort(),3000);
+            await fetch(url, { signal: c.signal, mode: 'no-cors' });
+            clearTimeout(t); const l=Math.round(performance.now()-s);
+            let cL, lT; if (l<200){cL='latency-fast';lT=t('latencyFast')}else if(l<500){cL='latency-medium';lT=t('latencyMedium')}else{cL='latency-slow';lT=t('latencySlow')}
+            return { latency: l, latencyClass: cL, latencyText: lT };
+        } catch (error) { return { latency: null, latencyClass: 'latency-unknown', latencyText: t('latencyUnknown') }; }
+    }
+    async function testAllEndpointsLatency() {
+        setStatus(t('testingLatency'));
+        const allEndpoints = [...allFetchedEndpoints.ipv4, ...allFetchedEndpoints.ipv6];
+        document.querySelectorAll('.endpoint-latency').forEach(el => { el.className = 'latency-indicator testing-indicator'; el.title = t('testingLatency'); });
+        const results = await Promise.all(allEndpoints.map(async ep => ({ endpoint: ep, result: await testEndpointLatency(ep) })));
+        results.forEach(({ endpoint, result }) => {
+            const latencyIndicator = document.querySelector(`input[value="${endpoint}"]`)?.parentElement.querySelector('.endpoint-latency');
+            if (latencyIndicator) {
+                latencyIndicator.className = `endpoint-latency latency-indicator ${result.latencyClass}`;
+                latencyIndicator.title = `${result.latencyText} (${result.latency || 'N/A'}ms)`;
+            }
+        });
+        const validEndpoints = results.filter(r => r.result.latency !== null).sort((a, b) => a.result.latency - b.result.latency);
+        if (validEndpoints.length > 0) {
+            const fastest = validEndpoints[0];
+            currentEndpoint = fastest.endpoint;
+            document.querySelectorAll('input[name^="endpoint-selector-"]').forEach(r => r.checked = r.value === fastest.endpoint);
+            updateDisplayedConfigs();
+            setStatus(`${t('autoSelectFastest')}: ${fastest.endpoint} (${fastest.result.latency}ms)`);
+        } else { setStatus(t('errorOccurred')); }
+        setTimeout(() => setStatus(""), 3000);
+    }
     
     initialize();
 });

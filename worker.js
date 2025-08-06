@@ -466,7 +466,6 @@ export default {
       const url = new URL(request.url);
       const pathParts = url.pathname.split('/').filter(p => p);
 
-      // NEW: URL format is now /sub/{client_type}/{data}
       if (pathParts[0] !== 'sub' || pathParts.length < 3) {
           return new Response("Not Found. Use /sub/{client_type}/{data} format.", { status: 404 });
       }
@@ -489,23 +488,22 @@ export default {
           }
 
           const endpointResponse = await fetch('https://raw.githubusercontent.com/ircfspace/endpoint/main/ip.json', {
-              headers: { 'User-Agent': 'WARP-Subscription-Worker/2.0' }
+              headers: { 'User-Agent': 'WARP-Subscription-Worker/2.1' }
           });
           if (!endpointResponse.ok) throw new Error("Could not fetch endpoints.");
           const endpointData = await endpointResponse.json();
-
-          // NEW: Use all available IPv4 and IPv6 endpoints
+          
           const allEndpoints = [...(endpointData.ipv4 || []), ...(endpointData.ipv6 || [])]
               .filter(ip => typeof ip === 'string' && ip.length > 0)
               .sort(() => 0.5 - Math.random());
 
           if (allEndpoints.length === 0) {
-              allEndpoints.push("162.159.192.1:2408"); // Add a fallback
+              allEndpoints.push("162.159.192.1:2408");
           }
 
           const configLines = accounts.flatMap(account => {
               if (!account || !account.privateKey || !account.v4 || !account.v6 || !account.peerPublicKey || !Array.isArray(account.reserved)) {
-                  return []; // Use flatMap to easily skip invalid accounts
+                  return []; 
               }
               
               const { privateKey, v4, v6, peerPublicKey, reserved } = account;
@@ -515,7 +513,6 @@ export default {
               const encodedPeerPubKey = encodeURIComponent(peerPublicKey);
               const encodedReserved = encodeURIComponent(reserved.join(','));
 
-              // Generate a config for every available endpoint for this one account
               return allEndpoints.map((endpoint, index) => {
                   const name = `${clientType}-WARP-${account.v4.split('.')[3]}-${index + 1}`;
                   const encodedName = encodeURIComponent(name);
@@ -527,8 +524,12 @@ export default {
                            return `wireguard://${endpoint}?private_key=${encodedPrivateKey}&peer_public_key=${encodedPeerPubKey}&mtu=1280&address=${encodeURIComponent(addressesWithCidr)}&reserved=${encodedReserved}`;
                       case 'shadowrocket-std':
                            return `wg://${endpoint}?publicKey=${encodedPeerPubKey}&privateKey=${encodedPrivateKey}&ip=${encodeURIComponent(addressesNoCidr)}&mtu=1280&dns=1.1.1.1&udp=1&reserved=${encodedReserved}#${encodedName}`;
+                      case 'shadowrocket-amz':
+                           const amneziaParams = '&obfs=amneziawg&obfsParam=4,40,70,0,0,0,0,0,0&flag=US';
+                           return `wg://${endpoint}?publicKey=${encodedPeerPubKey}&privateKey=${encodedPrivateKey}&ip=${encodeURIComponent(addressesNoCidr)}&mtu=1280&dns=1.1.1.1&udp=1&reserved=${encodedReserved}${amneziaParams}#${encodedName}`;
+
                       default:
-                          return null; // This will be filtered out
+                          return null;
                   }
               });
           }).filter(line => line !== null);

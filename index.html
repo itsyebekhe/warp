@@ -40,7 +40,6 @@
         [dir="rtl"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
         [dir="rtl"] .text-right { text-align: left; }
         [dir="rtl"] .text-left { text-align: right; }
-        [dir="rtl"] .peer-checked:after:translate-x-full { transform: translateX(-100%); }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans flex flex-col items-center justify-center min-h-screen p-4">
@@ -76,14 +75,14 @@
         <div id="results" class="hidden transition-all duration-500 ease-in-out"></div>
     </div>
     <div id="howToUseModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-        <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between p-4 border-b border-gray-700">
-                <h2 id="howToUseTitle" class="text-xl font-bold text-white">راهنمای استفاده</h2>
-                <button id="closeModalBtn" class="text-gray-400 hover:text-white">×</button>
-            </div>
-            <div id="howToUseContent" class="p-6 overflow-y-auto markdown-content"></div>
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <h2 id="howToUseTitle" class="text-xl font-bold text-white">راهنمای استفاده</h2>
+            <button id="closeModalBtn" class="text-gray-400 hover:text-white">×</button>
         </div>
+        <div id="howToUseContent" class="p-6 overflow-y-auto markdown-content"></div>
     </div>
+</div>
     <footer class="text-center py-8 mt-12 w-full">
         <p class="text-sm text-gray-400">Created with ❤️ by <span class="font-semibold text-gray-300">YEBEKHE</span></p>
         <div class="mt-4 flex justify-center space-x-6">
@@ -171,8 +170,7 @@ const translations = {
         clickForQrCode: "Click a section below to generate its QR code. Formats update automatically when you change Endpoint or DNS.",
         language: "Language",
         save: "Save",
-        shareFailed: "Failed to share config.",
-        allInOne: "All in One (Multi-peer)"
+        shareFailed: "Failed to share config."
     },
     fa: {
         // Persian translations
@@ -251,8 +249,7 @@ const translations = {
         clickForQrCode: "برای تولید کد QR روی بخش زیر کلیک کنید. فرمت‌ها با تغییر نقطه پایانی یا DNS به‌طور خودکار به‌روز می‌شوند.",
         language: "زبان",
         save: "ذخیره",
-        shareFailed: "اشتراک‌گذاری تنظیمات با شکست مواجه شد.",
-        allInOne: "همه در یک (چند همتا)"
+        shareFailed: "اشتراک‌گذاری تنظیمات با شکست مواجه شد."
     },
     ru: {
         // Russian translations
@@ -331,8 +328,7 @@ const translations = {
         clickForQrCode: "Нажмите на раздел ниже, чтобы сгенерировать его QR-код. Форматы автоматически обновляются при изменении конечной точки или DNS.",
         language: "Язык",
         save: "Сохранить",
-        shareFailed: "Не удалось поделиться конфигурацией.",
-        allInOne: "Все в одном (Мульти-пир)"
+        shareFailed: "Не удалось поделиться конфигурацией."
     },
     zh: {
         // Chinese translations
@@ -411,8 +407,7 @@ const translations = {
         clickForQrCode: "单击下面的部分以生成其二维码。当您更改端点或 DNS 时，格式会自动更新。",
         language: "语言",
         save: "保存",
-        shareFailed: "分享配置失败。",
-        allInOne: "一体化（多节点）"
+        shareFailed: "分享配置失败。"
     }
 };
 
@@ -544,6 +539,12 @@ function updateUILanguage() {
         updateResultsSectionLanguage();
     }
     
+    // Update modal title
+    const howToUseTitle = document.getElementById('howToUseTitle');
+    if (howToUseTitle) {
+        howToUseTitle.textContent = t('howToUse');
+    }
+    
     // Update footer
     document.querySelector('footer p').innerHTML = `${t('createdBy')} <span class="font-semibold text-gray-300">YEBEKHE</span>`;
     
@@ -551,12 +552,6 @@ function updateUILanguage() {
     const currentLangText = document.getElementById('currentLangText');
     if (currentLangText) {
         currentLangText.textContent = t('language');
-    }
-    
-    // Update modal title
-    const howToUseTitle = document.getElementById('howToUseTitle');
-    if (howToUseTitle) {
-        howToUseTitle.textContent = t('howToUse');
     }
 }
 
@@ -640,15 +635,6 @@ function updateResultsSectionLanguage() {
                     msg.textContent = t('noIPv6Endpoints');
                 }
             });
-            
-            // Update "All in One" toggle text
-            const allInOneToggle = endpointSelector.querySelector('.all-in-one-toggle');
-            if (allInOneToggle) {
-                const toggleLabel = allInOneToggle.parentElement.querySelector('span');
-                if (toggleLabel) {
-                    toggleLabel.textContent = t('allInOne');
-                }
-            }
         }
         
         // Update DNS selector
@@ -707,6 +693,9 @@ class ShzAlClient {
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize language system
+    // let currentLanguage = getInitialLanguage();
+
     // Add language selector
     addLanguageSelector();
 
@@ -807,10 +796,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function generateAllFormats(account, endpoint, dns) {
-        // Check if "All in One" is enabled for Standard and Amnezia tabs
-        const standardAllInOne = document.querySelector('#tab-standard .all-in-one-toggle')?.checked || false;
-        const amneziaAllInOne = document.querySelector('#tab-amnezia .all-in-one-toggle')?.checked || false;
-        
         const singboxTemplate = { "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" }, "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ], "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ], "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] } };
         const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
         
@@ -861,43 +846,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "domain_strategy": "" 
         };
         
-        // Generate Standard configuration with multi-peer support
-        let standardConfig;
-        if (standardAllInOne) {
-            let peers = '';
-            // Add all IPv4 endpoints
-            allFetchedEndpoints.ipv4.forEach(ep => {
-                peers += `\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nEndpoint = ${ep}\nAllowedIPs = 0.0.0.0/0, ::/0`;
-            });
-            // Add all IPv6 endpoints
-            allFetchedEndpoints.ipv6.forEach(ep => {
-                peers += `\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nEndpoint = ${ep}\nAllowedIPs = 0.0.0.0/0, ::/0`;
-            });
-            standardConfig = `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280${peers}`;
-        } else {
-            standardConfig = `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${endpoint}`;
-        }
-        
-        // Generate Amnezia configuration with multi-peer support
-        let amneziaConfig;
-        if (amneziaAllInOne) {
-            let peers = '';
-            // Add all IPv4 endpoints
-            allFetchedEndpoints.ipv4.forEach(ep => {
-                peers += `\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nEndpoint = ${ep}\nAllowedIPs = 0.0.0.0/0, ::/0`;
-            });
-            // Add all IPv6 endpoints
-            allFetchedEndpoints.ipv6.forEach(ep => {
-                peers += `\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nEndpoint = ${ep}\nAllowedIPs = 0.0.0.0/0, ::/0`;
-            });
-            amneziaConfig = `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70${peers}`;
-        } else {
-            amneziaConfig = `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${endpoint}`;
-        }
-        
         return {
-            standard: standardConfig,
-            amnezia: amneziaConfig,
+            standard: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${endpoint}`,
+            amnezia: `[Interface]\nPrivateKey = ${account.privateKey}\nAddress = ${addressesWithCidr}\nDNS = ${dns}\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\n\n[Peer]\nPublicKey = ${account.peerPublicKey}\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = ${endpoint}`,
             singbox: JSON.stringify(singboxTemplate, null, 2),
             v2rayngUrl: `wireguard://${encodedPrivateKey}@${endpoint}?address=${encodeURIComponent(addressesWithCidr)}&reserved=${encodedReserved}&publickey=${encodedPeerPubKey}&mtu=1280#${encodedName}`,
             streisandUrl: `wireguard://${endpoint}?private_key=${encodedPrivateKey}&peer_public_key=${encodedPeerPubKey}&mtu=1280&address=${encodeURIComponent(addressesWithCidr)}&reserved=${encodedReserved}`,
@@ -1097,19 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function createEndpointSelectorHTML(groupName) { 
         let html = `<div class="mt-6 pt-4 border-t border-gray-700"><h4 class="text-base font-semibold text-gray-300 mb-3 text-center">${t('selectEndpoint')}</h4>`;
         
-        // Add "All in One" toggle for Standard and Amnezia tabs
-        if (groupName.includes('standard') || groupName.includes('amnezia')) {
-            html += `
-                <div class="flex items-center justify-center mb-4">
-                    <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" class="all-in-one-toggle sr-only peer" data-tab="${groupName}">
-                        <div class="relative w-11 h-6 bg-gray-700 peer-focus:ring-4 peer-focus:ring-orange-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
-                        <span class="ms-3 text-sm font-medium text-gray-300">${t('allInOne')}</span>
-                    </label>
-                </div>
-            `;
-        }
-        
         // Create tabbed interface for IPv4 and IPv6
         html += `<div class="endpoint-tabs flex mb-2">`;
         html += `<button class="endpoint-tab active" data-type="ipv4">${t('ipv4')}</button>`;
@@ -1202,17 +1140,6 @@ document.addEventListener('DOMContentLoaded', () => {
             container.querySelector('.save-custom-dns-btn').classList.toggle('hidden', !isCustomSelected);
             container.querySelector('.delete-custom-dns-btn').classList.toggle('hidden', !isDataCustom);
         });
-        
-        // Restore toggle states from localStorage
-        const standardToggle = document.querySelector('#tab-standard .all-in-one-toggle');
-        const amneziaToggle = document.querySelector('#tab-amnezia .all-in-one-toggle');
-        
-        if (standardToggle) {
-            standardToggle.checked = localStorage.getItem('warpGeneratorStandardAllInOne') === 'true';
-        }
-        if (amneziaToggle) {
-            amneziaToggle.checked = localStorage.getItem('warpGeneratorAmneziaAllInOne') === 'true';
-        }
     }
     
     function updateDisplayedConfigs() {
@@ -1236,23 +1163,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const activePane = document.querySelector('.tab-pane:not(.hidden)');
         if (activePane) updateQrCodeForActiveTab(activePane.id);
-        
-        // Sync toggle states when switching tabs
-        syncToggleStates();
-    }
-    
-    // New function to sync toggle states
-    function syncToggleStates() {
-        const standardToggle = document.querySelector('#tab-standard .all-in-one-toggle');
-        const amneziaToggle = document.querySelector('#tab-amnezia .all-in-one-toggle');
-        
-        // Save toggle states to localStorage
-        if (standardToggle) {
-            localStorage.setItem('warpGeneratorStandardAllInOne', standardToggle.checked);
-        }
-        if (amneziaToggle) {
-            localStorage.setItem('warpGeneratorAmneziaAllInOne', amneziaToggle.checked);
-        }
     }
     
     function updateQrCodeForActiveTab(activeTabId) {
@@ -1418,9 +1328,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateDisplayedConfigs();
                 syncSelectors();
             }
-        } else if (target.classList.contains('all-in-one-toggle')) {
-            // Update configurations when the toggle is changed
-            updateDisplayedConfigs();
         }
     });
     
@@ -1450,34 +1357,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     howToUseBtn.addEventListener('click', () => { 
-        // Determine the correct README URL based on current language
-        const readmeUrls = {
-            'fa': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.fa.md',
-            'en': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.en.md',
-            'ru': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.ru.md',
-            'zh': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.zh.md'
-        };
-        
-        const readmeUrl = readmeUrls[currentLanguage] || readmeUrls['en'];
-        
-        fetch(readmeUrl).then(response => { 
-            if (!response.ok) { 
-                throw new Error('README.md not found.'); 
-            } 
-            return response.text(); 
-        }).then(markdown => { 
-            howToUseContent.innerHTML = marked.parse(markdown); 
-            // Set direction based on current language
-            howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
-            howToUseModal.classList.remove('hidden'); 
-        }).catch(error => { 
-            console.error('Error fetching readme:', error); 
-            howToUseContent.innerHTML = `<p class="text-red-400">${t('helpFileError')}</p>`; 
-            // Set direction for error message too
-            howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
-            howToUseModal.classList.remove('hidden'); 
-        }); 
-    });
+    // Determine the correct README URL based on current language
+    const readmeUrls = {
+        'fa': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.fa.md',
+        'en': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.en.md',
+        'ru': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.ru.md',
+        'zh': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.zh.md'
+    };
+    
+    const readmeUrl = readmeUrls[currentLanguage] || readmeUrls['en'];
+    
+    fetch(readmeUrl).then(response => { 
+        if (!response.ok) { 
+            throw new Error('README.md not found.'); 
+        } 
+        return response.text(); 
+    }).then(markdown => { 
+        howToUseContent.innerHTML = marked.parse(markdown); 
+        // Set direction based on current language
+        howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
+        howToUseModal.classList.remove('hidden'); 
+    }).catch(error => { 
+        console.error('Error fetching readme:', error); 
+        howToUseContent.innerHTML = `<p class="text-red-400">${t('helpFileError')}</p>`; 
+        // Set direction for error message too
+        howToUseContent.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
+        howToUseModal.classList.remove('hidden'); 
+    }); 
+});
     
     const closeModal = () => howToUseModal.classList.add('hidden');
     closeModalBtn.addEventListener('click', closeModal);

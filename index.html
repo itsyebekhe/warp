@@ -28,6 +28,12 @@
         .endpoint-type-indicator { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; margin-left: 0.5rem; }
         .ipv4-indicator { background-color: #3b82f6; color: white; }
         .ipv6-indicator { background-color: #8b5cf6; color: white; }
+        .endpoint-tab { padding: 0.5rem 1rem; border-radius: 0.375rem 0.375rem 0 0; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; }
+        .endpoint-tab.active { background-color: #1f2937; color: #f97316; border-bottom: 2px solid #f97316; }
+        .endpoint-tab:not(.active) { background-color: #374151; color: #9ca3af; }
+        .endpoint-tab:not(.active):hover { background-color: #4b5563; color: #d1d5db; }
+        .endpoint-tab-content { padding: 1rem; border-radius: 0 0 0.375rem 0.375rem; background-color: #1f2937; }
+        .endpoint-tab-content.hidden { display: none; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans flex flex-col items-center justify-center min-h-screen p-4">
@@ -149,19 +155,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Endpoint list fetch failed');
             const text = await response.text(); 
             const data = JSON.parse(text.replace(/[\u200B-\u200D\uFEFF]/g, '')); 
-            // Combine IPv4 and IPv6 endpoints
-            const endpoints = [...data.ipv4, ...data.ipv6];
-            
-            // Prioritize IPv4 endpoints starting with '8.'
-            const recommended = endpoints.filter(ip => ip.startsWith('8.'));
-            const others = endpoints.filter(ip => !ip.startsWith('8.'));
-            
-            recommended.sort(() => 0.5 - Math.random()); 
-            others.sort(() => 0.5 - Math.random()); 
-            return recommended.concat(others);
+            // Return both IPv4 and IPv6 endpoints separately
+            return {
+                ipv4: data.ipv4,
+                ipv6: data.ipv6
+            };
         } catch (error) { 
             setStatus("Endpoint fetch failed. Using random fallback."); 
-            return Array.from({length: 5}, () => "162.159.192." + Math.floor(Math.random() * 256) + ":2408"); 
+            return { 
+                ipv4: Array.from({length: 5}, () => "162.159.192." + Math.floor(Math.random() * 256) + ":2408"),
+                ipv6: []
+            }; 
         }
     }
     
@@ -170,7 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const urltestOutbound = singboxTemplate.outbounds.find(o => o.tag === 'auto');
         
         // Process all endpoints (IPv4 and IPv6)
-        allFetchedEndpoints.forEach(ep => {
+        const allEndpoints = [...allFetchedEndpoints.ipv4, ...allFetchedEndpoints.ipv6];
+        allEndpoints.forEach(ep => {
             const { server, port, type } = parseEndpoint(ep);
             const outboundTag = `WARP-${server}:${port}`;
             const wireguardOutbound = { 
@@ -299,7 +304,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (showStatus) setStatus("Loading selected config with latest endpoints..."); 
         currentAccount = accounts[selectedIndex].account; 
         allFetchedEndpoints = await fetchAllEndpoints(); 
-        currentEndpoint = allFetchedEndpoints[0]; 
+        // Default to first IPv4 endpoint, or first IPv6 if no IPv4 available
+        currentEndpoint = allFetchedEndpoints.ipv4.length > 0 ? allFetchedEndpoints.ipv4[0] : 
+                         allFetchedEndpoints.ipv6.length > 0 ? allFetchedEndpoints.ipv6[0] : '';
         renderResults(); 
         if (showStatus) setTimeout(() => setStatus(""), 3000); 
     }
@@ -413,21 +420,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function createEndpointSelectorHTML(groupName) { 
-        let html = `<div class="mt-6 pt-4 border-t border-gray-700"><h4 class="text-base font-semibold text-gray-300 mb-3 text-center">Select an Endpoint</h4><p class="text-sm text-center text-gray-400 mb-4"><span class="font-bold text-orange-400">Recommended:</span> Endpoints starting with <code class="bg-gray-700 text-orange-300 px-1 rounded">8.x.x.x</code> may offer better performance on some ISPs. IPv6 endpoints are also available.</p><div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`; 
+        let html = `<div class="mt-6 pt-4 border-t border-gray-700"><h4 class="text-base font-semibold text-gray-300 mb-3 text-center">Select an Endpoint</h4>`;
         
-        allFetchedEndpoints.forEach(ep => {
-            const { type } = parseEndpoint(ep);
-            const isRecommended = ep.startsWith('8.');
-            const labelClass = isRecommended ? 'text-orange-300' : 'text-gray-300';
-            const recommendText = isRecommended ? '<span class="text-xs font-sans font-bold text-orange-500 ml-2">(Recommended)</span>' : '';
-            const typeIndicator = type === 'ipv6' ? 
-                '<span class="endpoint-type-indicator ipv6-indicator">IPv6</span>' : 
-                '<span class="endpoint-type-indicator ipv4-indicator">IPv4</span>';
-            
-            html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 ${labelClass} font-mono text-sm">${ep} ${recommendText}</span>${typeIndicator}</label>`;
-        }); 
-        html += `</div></div>`; 
-        return html; 
+        // Create tabbed interface for IPv4 and IPv6
+        html += `<div class="endpoint-tabs flex mb-2">`;
+        html += `<button class="endpoint-tab active" data-type="ipv4">IPv4</button>`;
+        html += `<button class="endpoint-tab" data-type="ipv6">IPv6</button>`;
+        html += `</div>`;
+        
+        // IPv4 tab content
+        html += `<div class="endpoint-tab-content ipv4" data-type="ipv4">`;
+        html += `<p class="text-sm text-center text-gray-400 mb-4"><span class="font-bold text-orange-400">Recommended:</span> Endpoints starting with <code class="bg-gray-700 text-orange-300 px-1 rounded">8.x.x.x</code> may offer better performance on some ISPs.</p>`;
+        html += `<div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
+        
+        if (allFetchedEndpoints.ipv4.length > 0) {
+            allFetchedEndpoints.ipv4.forEach(ep => {
+                const isRecommended = ep.startsWith('8.');
+                const labelClass = isRecommended ? 'text-orange-300' : 'text-gray-300';
+                const recommendText = isRecommended ? '<span class="text-xs font-sans font-bold text-orange-500 ml-2">(Recommended)</span>' : '';
+                
+                html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 ${labelClass} font-mono text-sm">${ep} ${recommendText}</span></label>`;
+            });
+        } else {
+            html += `<p class="text-center text-gray-400 py-4">No IPv4 endpoints available</p>`;
+        }
+        html += `</div></div>`;
+        
+        // IPv6 tab content
+        html += `<div class="endpoint-tab-content ipv6 hidden" data-type="ipv6">`;
+        html += `<p class="text-sm text-center text-gray-400 mb-4">IPv6 endpoints for networks that support IPv6 connectivity.</p>`;
+        html += `<div class="max-h-[200px] overflow-y-auto bg-gray-900 p-3 rounded-lg border border-gray-700 space-y-2">`;
+        
+        if (allFetchedEndpoints.ipv6.length > 0) {
+            allFetchedEndpoints.ipv6.forEach(ep => {
+                html += `<label class="flex items-center p-2 rounded-md hover:bg-gray-700/50 transition-colors cursor-pointer"><input type="radio" name="${groupName}" value="${ep}" class="h-4 w-4 text-orange-600 bg-gray-700 border-gray-600 focus:ring-orange-500 focus:ring-offset-gray-800"><span class="ml-3 text-gray-300 font-mono text-sm">${ep}</span></label>`;
+            });
+        } else {
+            html += `<p class="text-center text-gray-400 py-4">No IPv6 endpoints available</p>`;
+        }
+        html += `</div></div>`;
+        
+        html += `</div>`;
+        return html;
     }
     
     function createActionButtons(content, color, id) { 
@@ -668,6 +702,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateDisplayedConfigs();
                 syncSelectors();
             }
+        }
+    });
+    
+    // Handle endpoint tab switching
+    resultsDiv.addEventListener('click', e => {
+        const target = e.target;
+        if (target.classList.contains('endpoint-tab')) {
+            const tabContainer = target.closest('.endpoint-tabs');
+            const tabContents = tabContainer.nextElementSibling.parentElement.querySelectorAll('.endpoint-tab-content');
+            
+            // Update tab styles
+            tabContainer.querySelectorAll('.endpoint-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            target.classList.add('active');
+            
+            // Show/hide content
+            const tabType = target.dataset.type;
+            tabContents.forEach(content => {
+                if (content.dataset.type === tabType) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
         }
     });
     

@@ -52,6 +52,14 @@
             50% { opacity: 1; }
             100% { opacity: 0.6; }
         }
+        /* Mirror notice styles */
+        .mirror-notice {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans flex flex-col items-center justify-center min-h-screen p-4">
@@ -74,6 +82,21 @@
                     <span id="forkCount" class="text-sm text-gray-400">-</span>
                 </div>
             </div>
+            
+            <!-- Mirror Notice Section -->
+            <div id="mirrorNotice" class="hidden mt-2 p-2 bg-blue-900/30 border border-blue-700/50 rounded-lg text-center">
+                <p class="text-sm text-blue-300">
+                    <span class="font-semibold" id="mirrorNoticeText">Alternative Mirror:</span> 
+                    <a id="mirrorLink" href="https://warpgenerator.pages.dev/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">
+                        warpgenerator.pages.dev
+                    </a>
+                    <span class="text-xs ml-2" id="ifNotAccessibleText">(if this site is not accessible)</span>
+                </p>
+                <button id="switchSiteBtn" class="mt-1 text-xs bg-blue-700 hover:bg-blue-600 text-white py-1 px-3 rounded transition-colors">
+                    Switch Site
+                </button>
+            </div>
+            
             <button id="howToUseBtn" class="mt-4 text-orange-400 border border-orange-400/50 hover:bg-orange-400/10 font-semibold py-2 px-4 rounded-lg transition-colors">
                 راهنمای استفاده (How to Use)
             </button>
@@ -221,7 +244,9 @@ const translations = {
         latencyMedium: "Medium",
         latencySlow: "Slow",
         latencyUnknown: "Unknown",
-        autoSelectFastest: "Auto-select Fastest"
+        autoSelectFastest: "Auto-select Fastest",
+        mirrorNotice: "Alternative Mirror:",
+        ifNotAccessible: "(if this site is not accessible)",
     },
     fa: {
         // Persian translations
@@ -307,7 +332,9 @@ const translations = {
         latencyMedium: "متوسط",
         latencySlow: "کند",
         latencyUnknown: "ناشناخته",
-        autoSelectFastest: "انتخاب خودکار سریع‌ترین"
+        autoSelectFastest: "انتخاب خودکار سریع‌ترین",
+        mirrorNotice: "آینه جایگزین:",
+        ifNotAccessible: "(در صورت عدم دسترسی به این سایت)",
     },
     ru: {
         // Russian translations
@@ -393,7 +420,9 @@ const translations = {
         latencyMedium: "Средне",
         latencySlow: "Медленно",
         latencyUnknown: "Неизвестно",
-        autoSelectFastest: "Автовыбор самого быстрого"
+        autoSelectFastest: "Автовыбор самого быстрого",
+        mirrorNotice: "Альтернативное зеркало:",
+        ifNotAccessible: "(если этот сайт недоступен)",
     },
     zh: {
         // Chinese translations
@@ -479,7 +508,9 @@ const translations = {
         latencyMedium: "中等",
         latencySlow: "慢速",
         latencyUnknown: "未知",
-        autoSelectFastest: "自动选择最快"
+        autoSelectFastest: "自动选择最快",
+        mirrorNotice: "备用镜像:",
+        ifNotAccessible: "(如果此网站无法访问)",
     }
 };
 // Language detection and storage
@@ -610,6 +641,26 @@ function updateUILanguage() {
     const currentLangText = document.getElementById('currentLangText');
     if (currentLangText) {
         currentLangText.textContent = t('language');
+    }
+    
+    // Update mirror notice text
+    const mirrorNoticeText = document.getElementById('mirrorNoticeText');
+    const ifNotAccessibleText = document.getElementById('ifNotAccessibleText');
+    const switchSiteBtn = document.getElementById('switchSiteBtn');
+    
+    if (mirrorNoticeText) {
+        mirrorNoticeText.textContent = t('mirrorNotice');
+    }
+    
+    if (ifNotAccessibleText) {
+        ifNotAccessibleText.textContent = t('ifNotAccessible');
+    }
+    
+    if (switchSiteBtn) {
+        switchSiteBtn.textContent = currentLanguage === 'fa' ? 'تغییر سایت' : 
+                                 currentLanguage === 'ru' ? 'Переключить сайт' : 
+                                 currentLanguage === 'zh' ? '切换站点' : 
+                                 'Switch Site';
     }
 }
 // Update language in results section
@@ -770,7 +821,6 @@ class ShzAlClient {
 }
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize language system
-    // let currentLanguage = getInitialLanguage();
     // Add language selector
     addLanguageSelector();
     // Set initial language
@@ -780,6 +830,37 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Fetch repository stats
     fetchRepoStats();
+    
+    // Mirror site detection and notice
+    const currentHost = window.location.hostname;
+    const githubHost = 'itsyebekhe.github.io';
+    const pagesHost = 'warpgenerator.pages.dev';
+    const mirrorNotice = document.getElementById('mirrorNotice');
+    const mirrorLink = document.getElementById('mirrorLink');
+    const switchSiteBtn = document.getElementById('switchSiteBtn');
+    
+    // Function to show mirror notice
+    function showMirrorNotice(mirrorUrl) {
+        mirrorLink.href = mirrorUrl;
+        mirrorNotice.classList.remove('hidden');
+        mirrorNotice.classList.add('mirror-notice');
+    }
+    
+    // Check current site and show appropriate mirror
+    if (currentHost === githubHost) {
+        // User is on GitHub Pages, show Cloudflare Pages mirror
+        showMirrorNotice(`https://${pagesHost}/`);
+    } else if (currentHost === pagesHost) {
+        // User is on Cloudflare Pages, show GitHub Pages mirror
+        showMirrorNotice(`https://${githubHost}/warp/`);
+    }
+    
+    // Add event listener for switch site button
+    if (switchSiteBtn) {
+        switchSiteBtn.addEventListener('click', () => {
+            window.location.href = mirrorLink.href;
+        });
+    }
     
     const shzAl = new ShzAlClient();
     const statusText = document.getElementById('statusText');

@@ -1,6 +1,3 @@
-### English Version (`README.en.md`)
----
-
 # How to Use Ultimate WARP Generator
 
 This tool helps you easily **create, save, and manage** custom, optimized WARP configurations directly in your browser and use them to access a free and open internet.

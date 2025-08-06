@@ -415,6 +415,9 @@ const translations = {
 const LANGUAGE_STORAGE_KEY = 'warpGeneratorLanguage';
 const DEFAULT_LANGUAGE = 'en';
 
+// Global variable for current language
+let currentLanguage = getInitialLanguage();
+
 // Get saved language or detect browser language
 function getInitialLanguage() {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -685,7 +688,7 @@ class ShzAlClient {
 }
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize language system
-    let currentLanguage = getInitialLanguage();
+    // let currentLanguage = getInitialLanguage();
 
     // Add language selector
     addLanguageSelector();

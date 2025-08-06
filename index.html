@@ -148,26 +148,41 @@ document.addEventListener('DOMContentLoaded', () => {
         return { privateKey, v4: accountData.config.interface.addresses.v4, v6: accountData.config.interface.addresses.v6, peerPublicKey: accountData.config.peers[0].public_key, reserved: Array.from(atob(accountData.config.client_id)).map(c => c.charCodeAt(0)) };
     }
     
-    async function fetchAllEndpoints() {
-        setStatus("Fetching latest endpoint list...");
-        try {
-            const response = await fetch('https://raw.githubusercontent.com/ircfspace/endpoint/main/ip.json'); 
-            if (!response.ok) throw new Error('Endpoint list fetch failed');
-            const text = await response.text(); 
-            const data = JSON.parse(text.replace(/[\u200B-\u200D\uFEFF]/g, '')); 
-            // Return both IPv4 and IPv6 endpoints separately
-            return {
-                ipv4: data.ipv4,
-                ipv6: data.ipv6
-            };
-        } catch (error) { 
-            setStatus("Endpoint fetch failed. Using random fallback."); 
-            return { 
-                ipv4: Array.from({length: 5}, () => "162.159.192." + Math.floor(Math.random() * 256) + ":2408"),
-                ipv6: []
-            }; 
-        }
+async function fetchAllEndpoints() {
+    setStatus("Fetching latest endpoint list...");
+    try {
+        const response = await fetch('https://raw.githubusercontent.com/ircfspace/endpoint/main/ip.json'); 
+        if (!response.ok) throw new Error('Endpoint list fetch failed');
+        const text = await response.text(); 
+        const data = JSON.parse(text.replace(/[\u200B-\u200D\uFEFF]/g, '')); 
+        
+        // Process IPv4 endpoints: separate recommended (starting with '8.') and others
+        const ipv4Recommended = data.ipv4.filter(ip => ip.startsWith('8.'));
+        const ipv4Others = data.ipv4.filter(ip => !ip.startsWith('8.'));
+        
+        // Shuffle each group randomly
+        ipv4Recommended.sort(() => 0.5 - Math.random());
+        ipv4Others.sort(() => 0.5 - Math.random());
+        
+        // Combine: recommended first, then others
+        const sortedIPv4 = [...ipv4Recommended, ...ipv4Others];
+        
+        // For IPv6, we don't have a specific recommendation, so we just shuffle
+        const shuffledIPv6 = [...data.ipv6];
+        shuffledIPv6.sort(() => 0.5 - Math.random());
+        
+        return {
+            ipv4: sortedIPv4,
+            ipv6: shuffledIPv6
+        };
+    } catch (error) { 
+        setStatus("Endpoint fetch failed. Using random fallback."); 
+        return { 
+            ipv4: Array.from({length: 5}, () => "162.159.192." + Math.floor(Math.random() * 256) + ":2408"),
+            ipv6: []
+        }; 
     }
+}
     
     function generateAllFormats(account, endpoint, dns) {
         const singboxTemplate = { "dns": { "final": "local-dns", "rules": [ { "action": "route", "clash_mode": "Global", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "server": "proxy-dns", "source_ip_cidr": [ "172.19.0.0/30", "fdfe:dcba:9876::1/126" ] }, { "action": "route", "clash_mode": "Direct", "server": "direct-dns" }, { "action": "route", "rule_set": [ "geosite-ir" ], "server": "direct-dns" } ], "servers": [ { "address": "tcp://1.1.1.1", "address_resolver": "local-dns", "detour": "proxy", "tag": "proxy-dns" }, { "address": "local", "detour": "direct", "tag": "local-dns" }, { "address": "tcp://8.8.8.8", "detour": "direct", "tag": "direct-dns" } ], "strategy": "prefer_ipv4" }, "inbounds": [ { "address": [ "172.19.0.1/30", "fdfe:dcba:9876::1/126" ], "auto_route": true, "endpoint_independent_nat": false, "mtu": 9000, "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 2080 } }, "stack": "system", "strict_route": false, "type": "tun" }, { "listen": "127.0.0.1", "listen_port": 2080, "type": "mixed", "users": [] } ], "outbounds": [ { "outbounds": [ "auto", "direct" ], "tag": "proxy", "type": "selector" }, { "interval": "10m", "outbounds": [], "tag": "auto", "tolerance": 50, "type": "urltest", "url": "http://www.gstatic.com/generate_204" }, { "tag": "direct", "type": "direct" } ], "route": { "auto_detect_interface": true, "final": "proxy", "rule_set": [ { "download_detour": "direct", "format": "binary", "tag": "geosite-ads", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ads-all.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geosite-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geosite/category-ir.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-private", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/private.srs" }, { "download_detour": "direct", "format": "binary", "tag": "geoip-ir", "type": "remote", "url": "https://raw.githubusercontent.com/itsyebekhe/meta-rules-dat-sing/main/geo/geoip/ir.srs" } ], "rules": [ { "action": "sniff" }, { "action": "route", "clash_mode": "Direct", "outbound": "direct" }, { "action": "route", "clash_mode": "Global", "outbound": "proxy" }, { "action": "hijack-dns", "protocol": "dns" }, { "action": "route", "outbound": "direct", "rule_set": [ "geoip-private", "geosite-private", "geosite-ir", "geoip-ir" ] }, { "action": "reject", "rule_set": [ "geosite-ads" ] } ] } };

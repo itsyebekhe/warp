@@ -135,7 +135,6 @@
 <script>
 // App version
 const APP_VERSION = '1.2.0';
-
 // Multi-language support
 const translations = {
     en: {
@@ -483,13 +482,10 @@ const translations = {
         autoSelectFastest: "自动选择最快"
     }
 };
-
 // Language detection and storage
 const LANGUAGE_STORAGE_KEY = 'warpGeneratorLanguage';
 const DEFAULT_LANGUAGE = 'en';
-
 let currentLanguage = getInitialLanguage();
-
 // Get saved language or detect browser language
 function getInitialLanguage() {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -505,7 +501,6 @@ function getInitialLanguage() {
     
     return DEFAULT_LANGUAGE;
 }
-
 // Set the current language
 function setLanguage(lang) {
     if (translations[lang]) {
@@ -517,7 +512,6 @@ function setLanguage(lang) {
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
     }
 }
-
 // Get translation for a key
 function t(key, replacements = {}) {
     let text = translations[currentLanguage][key] || translations[DEFAULT_LANGUAGE][key] || key;
@@ -529,7 +523,6 @@ function t(key, replacements = {}) {
     
     return text;
 }
-
 // Add language selector to the UI
 function addLanguageSelector() {
     const header = document.querySelector('div.text-center.mb-8');
@@ -579,7 +572,6 @@ function addLanguageSelector() {
         });
     });
 }
-
 // Update all UI elements with translations
 function updateUILanguage() {
     // Update title and subtitle
@@ -620,7 +612,6 @@ function updateUILanguage() {
         currentLangText.textContent = t('language');
     }
 }
-
 // Update language in results section
 function updateResultsSectionLanguage() {
     // Update results title
@@ -755,7 +746,6 @@ function updateResultsSectionLanguage() {
         }
     });
 }
-
 // Fetch GitHub repository stats
 function fetchRepoStats() {
     fetch('https://api.github.com/repos/itsyebekhe/warp')
@@ -770,102 +760,6 @@ function fetchRepoStats() {
             document.getElementById('forkCount').textContent = '?';
         });
 }
-
-// Test endpoint latency
-async function testEndpointLatency(endpoint) {
-    const { server, port } = parseEndpoint(endpoint);
-    const url = `https://${server}:${port}/cdn-cgi/trace`;
-    
-    try {
-        const startTime = performance.now();
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
-        const response = await fetch(url, {
-            signal: controller.signal,
-            mode: 'no-cors'
-        });
-        
-        clearTimeout(timeoutId);
-        const latency = Math.round(performance.now() - startTime);
-        
-        // Determine latency category
-        let latencyClass, latencyText;
-        if (latency < 200) {
-            latencyClass = 'latency-fast';
-            latencyText = t('latencyFast');
-        } else if (latency < 500) {
-            latencyClass = 'latency-medium';
-            latencyText = t('latencyMedium');
-        } else {
-            latencyClass = 'latency-slow';
-            latencyText = t('latencySlow');
-        }
-        
-        return { latency, latencyClass, latencyText };
-    } catch (error) {
-        return { latency: null, latencyClass: 'latency-unknown', latencyText: t('latencyUnknown') };
-    }
-}
-
-// Test all endpoints latency
-async function testAllEndpointsLatency() {
-    setStatus(t('testingLatency'));
-    
-    // Get all endpoints (IPv4 and IPv6)
-    const allEndpoints = [...allFetchedEndpoints.ipv4, ...allFetchedEndpoints.ipv6];
-    
-    // Update all endpoint labels to show testing status
-    document.querySelectorAll('.endpoint-latency').forEach(el => {
-        el.className = 'latency-indicator testing-indicator';
-        el.title = t('testingLatency');
-    });
-    
-    // Test each endpoint
-    const results = {};
-    for (const endpoint of allEndpoints) {
-        const result = await testEndpointLatency(endpoint);
-        results[endpoint] = result;
-        
-        // Update the UI for this endpoint
-        const endpointLabel = document.querySelector(`input[value="${endpoint}"]`).parentElement;
-        let latencyIndicator = endpointLabel.querySelector('.endpoint-latency');
-        
-        if (!latencyIndicator) {
-            latencyIndicator = document.createElement('span');
-            latencyIndicator.className = 'latency-indicator';
-            endpointLabel.appendChild(latencyIndicator);
-        }
-        
-        latencyIndicator.className = `latency-indicator ${result.latencyClass}`;
-        latencyIndicator.title = `${result.latencyText} (${result.latency || 'N/A'}ms)`;
-    }
-    
-    // Auto-select the fastest endpoint
-    const validEndpoints = Object.entries(results)
-        .filter(([_, result]) => result.latency !== null)
-        .sort(([_, a], [__, b]) => a.latency - b.latency);
-    
-    if (validEndpoints.length > 0) {
-        const fastestEndpoint = validEndpoints[0][0];
-        currentEndpoint = fastestEndpoint;
-        
-        // Update the radio button selection
-        document.querySelectorAll('input[name^="endpoint-selector-"]').forEach(radio => {
-            radio.checked = radio.value === fastestEndpoint;
-        });
-        
-        // Update all configurations with the fastest endpoint
-        updateDisplayedConfigs();
-        
-        setStatus(`${t('autoSelectFastest')}: ${fastestEndpoint} (${validEndpoints[0][1].latency}ms)`);
-    } else {
-        setStatus(t('errorOccurred'));
-    }
-    
-    setTimeout(() => setStatus(""), 3000);
-}
-
 class ShzAlClient {
     constructor(baseURL = 'https://shz.al') { this.baseURL = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL; }
     async _handleResponse(response) { if (!response.ok) { const errorText = await response.text(); throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`); } return response; }
@@ -877,13 +771,10 @@ class ShzAlClient {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize language system
     // let currentLanguage = getInitialLanguage();
-
     // Add language selector
     addLanguageSelector();
-
     // Set initial language
     updateUILanguage();
-
     // Set document direction for RTL languages (Persian)
     document.documentElement.dir = currentLanguage === 'fa' ? 'rtl' : 'ltr';
     
@@ -933,6 +824,101 @@ document.addEventListener('DOMContentLoaded', () => {
             const [server, port] = endpoint.split(':');
             return { server, port: parseInt(port), type: 'ipv4' };
         }
+    }
+    
+    // Test endpoint latency
+    async function testEndpointLatency(endpoint) {
+        const { server, port } = parseEndpoint(endpoint);
+        const url = `https://${server}:${port}/cdn-cgi/trace`;
+        
+        try {
+            const startTime = performance.now();
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            const response = await fetch(url, {
+                signal: controller.signal,
+                mode: 'no-cors'
+            });
+            
+            clearTimeout(timeoutId);
+            const latency = Math.round(performance.now() - startTime);
+            
+            // Determine latency category
+            let latencyClass, latencyText;
+            if (latency < 200) {
+                latencyClass = 'latency-fast';
+                latencyText = t('latencyFast');
+            } else if (latency < 500) {
+                latencyClass = 'latency-medium';
+                latencyText = t('latencyMedium');
+            } else {
+                latencyClass = 'latency-slow';
+                latencyText = t('latencySlow');
+            }
+            
+            return { latency, latencyClass, latencyText };
+        } catch (error) {
+            return { latency: null, latencyClass: 'latency-unknown', latencyText: t('latencyUnknown') };
+        }
+    }
+    
+    // Test all endpoints latency
+    async function testAllEndpointsLatency() {
+        setStatus(t('testingLatency'));
+        
+        // Get all endpoints (IPv4 and IPv6)
+        const allEndpoints = [...allFetchedEndpoints.ipv4, ...allFetchedEndpoints.ipv6];
+        
+        // Update all endpoint labels to show testing status
+        document.querySelectorAll('.endpoint-latency').forEach(el => {
+            el.className = 'latency-indicator testing-indicator';
+            el.title = t('testingLatency');
+        });
+        
+        // Test each endpoint
+        const results = {};
+        for (const endpoint of allEndpoints) {
+            const result = await testEndpointLatency(endpoint);
+            results[endpoint] = result;
+            
+            // Update the UI for this endpoint
+            const endpointLabel = document.querySelector(`input[value="${endpoint}"]`).parentElement;
+            let latencyIndicator = endpointLabel.querySelector('.endpoint-latency');
+            
+            if (!latencyIndicator) {
+                latencyIndicator = document.createElement('span');
+                latencyIndicator.className = 'latency-indicator';
+                endpointLabel.appendChild(latencyIndicator);
+            }
+            
+            latencyIndicator.className = `latency-indicator ${result.latencyClass}`;
+            latencyIndicator.title = `${result.latencyText} (${result.latency || 'N/A'}ms)`;
+        }
+        
+        // Auto-select the fastest endpoint
+        const validEndpoints = Object.entries(results)
+            .filter(([_, result]) => result.latency !== null)
+            .sort(([_, a], [__, b]) => a.latency - b.latency);
+        
+        if (validEndpoints.length > 0) {
+            const fastestEndpoint = validEndpoints[0][0];
+            currentEndpoint = fastestEndpoint;
+            
+            // Update the radio button selection
+            document.querySelectorAll('input[name^="endpoint-selector-"]').forEach(radio => {
+                radio.checked = radio.value === fastestEndpoint;
+            });
+            
+            // Update all configurations with the fastest endpoint
+            updateDisplayedConfigs();
+            
+            setStatus(`${t('autoSelectFastest')}: ${fastestEndpoint} (${validEndpoints[0][1].latency}ms)`);
+        } else {
+            setStatus(t('errorOccurred'));
+        }
+        
+        setTimeout(() => setStatus(""), 3000);
     }
     
     async function fetchAccountFromWorker() {

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate WARP Generator v1.3.1</title>
+    <title>Ultimate WARP Generator v1.3.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -67,7 +68,7 @@
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight gradient-text">Ultimate WARP Generator</h1>
             <p class="text-gray-400 mt-2 text-lg">Generate & manage shareable configs for any client.</p>
             <div class="flex justify-center items-center mt-2 space-x-4">
-                <span class="text-sm text-gray-500">v1.3.1</span>
+                <span class="text-sm text-gray-500">v1.3.0</span>
                 <div class="flex items-center space-x-1">
                     <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     <span id="starCount" class="text-sm text-gray-400">-</span>
@@ -149,7 +150,7 @@
         </div>
     </div>
     <footer class="text-center py-8 mt-12 w-full">
-        <p class="text-sm text-gray-400">Created with ❤️ by <span class="font-semibold text-gray-300">YEBEKHE</span> | v1.3.1</p>
+        <p class="text-sm text-gray-400">Created with ❤️ by <span class="font-semibold text-gray-300">YEBEKHE</span> | v1.3.0</p>
         <div class="mt-4 flex justify-center space-x-6">
             <a href="https://t.me/yebekhe" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="Telegram"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.51.71l-4.88-3.58-2.32 2.23c-.25.28-.46.48-.93.48z"/></svg></a>
             <a href="https://x.com/yebekhe" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="X Account"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
@@ -158,7 +159,7 @@
     </footer>
 <script>
 // App version
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.0';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Multi-language support
@@ -250,6 +251,12 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSelectFastest: "Auto-select Fastest",
             mirrorNotice: "Alternative Mirror:",
             ifNotAccessible: "(if this site is not accessible)",
+            noSavedConfigsError: "You have no saved configurations to create a subscription from.",
+            appSubscriptionLinksTitle: "App Subscription Links",
+            appSubscriptionLinksDesc: "Add the appropriate link to your client. It will update automatically.",
+            nekoBoxV2rayNG: "V2RayNG / NekoBox",
+            close: "Close",
+            cancel: "Cancel",
         },
         fa: {
             // Persian translations
@@ -338,6 +345,12 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSelectFastest: "انتخاب خودکار سریع‌ترین",
             mirrorNotice: "آینه جایگزین:",
             ifNotAccessible: "(در صورت عدم دسترسی به این سایت)",
+            noSavedConfigsError: "هیچ تنظیمات ذخیره شده‌ای برای ایجاد اشتراک وجود ندارد.",
+            appSubscriptionLinksTitle: "لینک‌های اشتراک برنامه",
+            appSubscriptionLinksDesc: "لینک مناسب را به کلاینت خود اضافه کنید. این لینک به طور خودکار به‌روز می‌شود.",
+            nekoBoxV2rayNG: "V2RayNG / NekoBox",
+            close: "بستن",
+            cancel: "لغو",
         },
         ru: {
             // Russian translations
@@ -426,6 +439,12 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSelectFastest: "Автовыбор самого быстрого",
             mirrorNotice: "Альтернативное зеркало:",
             ifNotAccessible: "(если этот сайт недоступен)",
+            noSavedConfigsError: "У вас нет сохраненных конфигураций для создания подписки.",
+            appSubscriptionLinksTitle: "Ссылки на подписку для приложений",
+            appSubscriptionLinksDesc: "Добавьте соответствующую ссылку в ваш клиент. Она будет обновляться автоматически.",
+            nekoBoxV2rayNG: "V2RayNG / NekoBox",
+            close: "Закрыть",
+            cancel: "Отмена",
         },
         zh: {
             // Chinese translations
@@ -514,6 +533,12 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSelectFastest: "自动选择最快",
             mirrorNotice: "备用镜像:",
             ifNotAccessible: "(如果此网站无法访问)",
+            noSavedConfigsError: "您没有已保存的配置来创建订阅。",
+            appSubscriptionLinksTitle: "应用程序订阅链接",
+            appSubscriptionLinksDesc: "将相应的链接添加到您的客户端。它将自动更新。",
+            nekoBoxV2rayNG: "V2RayNG / NekoBox",
+            close: "关闭",
+            cancel: "取消",
         }
     };
     // Language detection and storage
@@ -756,6 +781,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const howToUseModal = document.getElementById('howToUseModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const howToUseContent = document.getElementById('howToUseContent');
+    const generateSubLinkBtn = document.getElementById('generateSubLinkBtn');
     const loadingButtonHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>${t('sharing')}`;
     let generatedConfigs = null, currentAccount = null, allFetchedEndpoints = [];
     let currentEndpoint = '', currentDns = '1.1.1.1';
@@ -954,7 +980,22 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
         templates.forEach(data => {
             if (data.id === 'app-urls') {
-                html += `<div id="tab-app-urls" class="tab-pane hidden space-y-4"><p class="text-sm text-center text-gray-400">${t('clickForQrCode')}</p>${createAppContentSectionHTML('nekobox', t('nekoBoxAndroid'))}${createAppContentSectionHTML('v2rayng', t('v2RayNGAndroid'))}${createAppContentSectionHTML('streisand', t('streisandiOS'))}${createAppContentSectionHTML('shadowrocket-std', t('shadowrocketStandard'))}${createAppContentSectionHTML('shadowrocket-amz', t('shadowrocketAmnezia'))}</div>`;
+                html += `
+                    <div id="tab-app-urls" class="tab-pane hidden space-y-4">
+                        <div class="p-4 bg-gray-900/50 rounded-lg border border-gray-700 text-center">
+                            <h4 class="font-semibold text-lg text-orange-400 mb-2">Dynamic Subscriptions</h4>
+                            <p class="text-sm text-gray-400 mb-4">Generate a single, stable link for your favorite client. The link will always provide fresh configs with the best available endpoints.</p>
+                            <button id="generateAppSubLinksBtn" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                                Generate Subscription Links
+                            </button>
+                        </div>
+                        <p class="text-sm text-center text-gray-400 pt-2">${t('clickForQrCode')}</p>
+                        ${createAppContentSectionHTML('nekobox', t('nekoBoxAndroid'))}
+                        ${createAppContentSectionHTML('v2rayng', t('v2RayNGAndroid'))}
+                        ${createAppContentSectionHTML('streisand', t('streisandiOS'))}
+                        ${createAppContentSectionHTML('shadowrocket-std', t('shadowrocketStandard'))}
+                        ${createAppContentSectionHTML('shadowrocket-amz', t('shadowrocketAmnezia'))}
+                    </div>`;
             } else {
                 const titleTooltip = data.id === 'amnezia' ? `<span class="inline-block" data-tippy-content="Uses jitter parameters to obfuscate traffic, may help bypass some restrictions."><svg class="w-4 h-4 inline-block ml-1 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg></span>` : '';
                 html += `
@@ -1218,7 +1259,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generateNewBtn.addEventListener('click', e => startNewGeneration(e.currentTarget));
     savedConfigsDropdown.addEventListener('change', () => loadSelectedConfig());
     updateEndpointsBtn.addEventListener('click', () => loadSelectedConfig());
-    
+
     deleteConfigBtn.addEventListener('click', () => { 
         const selectedIndex = savedConfigsDropdown.selectedIndex; 
         const accounts = getSavedAccounts(); 
@@ -1253,77 +1294,8 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsDiv.addEventListener('click', async e => {
         const target = e.target;
         const button = target.closest('button');
-        const contentSection = target.closest('.content-section');
-        
-        if (contentSection) { 
-            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); 
-            contentSection.classList.add('active'); 
-            updateQrCodeForActiveTab('tab-app-urls'); 
-        }
-        
-        if (button) {
-            if (button.classList.contains('copy-btn')) { 
-                const textToCopy = unescape(button.dataset.clipboardText); 
-                const originalText = button.innerHTML; 
-                navigator.clipboard.writeText(textToCopy).then(() => { button.innerHTML = t('copied'); setTimeout(() => { button.innerHTML = originalText; }, 2000); }); 
-                return; 
-            }
-            if (button.classList.contains('download-btn')) { 
-                const content = unescape(button.dataset.downloadContent); 
-                const blob = new Blob([content], { type: 'application/octet-stream' }); 
-                const a = document.createElement('a'); 
-                a.href = URL.createObjectURL(blob); 
-                a.download = button.dataset.filename; 
-                document.body.appendChild(a); a.click(); URL.revokeObjectURL(a.href); document.body.removeChild(a); 
-                return; 
-            }
-            if (button.classList.contains('share-btn')) { 
-                const contentToShare = unescape(button.dataset.shareContent); 
-                const originalText = button.innerHTML; 
-                button.disabled = true; button.innerHTML = loadingButtonHTML; 
-                try { 
-                    const result = await shzAl.uploadPaste(contentToShare, { expiration: '1h' }); 
-                    const container = button.closest('div').nextElementSibling;
-                    container.querySelector('input').value = result.url; 
-                    container.classList.remove('hidden'); 
-                    if (button.closest('.tab-pane')?.id === 'tab-singbox') updateQrCode(result.url, t('qrCodeSingBox')); 
-                } catch (error) { console.error("Share failed:", error); alert(t('shareFailed')); 
-                } finally { button.disabled = false; button.innerHTML = originalText; } 
-                return; 
-            }
-            if (button.classList.contains('copy-link-btn')) { 
-                const linkToCopy = button.previousElementSibling.value; 
-                const originalText = button.innerHTML; 
-                navigator.clipboard.writeText(linkToCopy).then(() => { button.innerHTML = t('linkCopied'); setTimeout(() => { button.innerHTML = originalText; }, 2000); }); 
-                return; 
-            }
-            if (button.classList.contains('save-custom-dns-btn')) { 
-                const container = button.closest('.dns-container'); 
-                const customInput = container.querySelector('.dns-custom-input'); 
-                const dnsValue = customInput.value.trim(); 
-                if (!dnsValue) { alert(t('enterCustomDns')); return; } 
-                const dnsName = await showModal({ title: t('enterDnsName', { value: dnsValue }), placeholder: t('myCustomDns'), confirmText: t('save') });
-                if (dnsName) { 
-                    const dnsList = getCustomDnsList(); 
-                    if (dnsList.some(item => item.value === dnsValue)) { alert(t('dnsAlreadySaved')); return; } 
-                    dnsList.push({ name: dnsName || t('myCustomDns'), value: dnsValue }); 
-                    saveCustomDnsList(dnsList); 
-                    currentDns = dnsValue; renderResults(); 
-                } 
-            }
-            if (button.classList.contains('delete-custom-dns-btn')) { 
-                const dnsValueToDelete = button.closest('.dns-container').querySelector('.dns-select').value;
-                if (confirm(t('deleteDnsConfirm', { value: dnsValueToDelete }))) { 
-                    let dnsList = getCustomDnsList(); 
-                    dnsList = dnsList.filter(item => item.value !== dnsValueToDelete); 
-                    saveCustomDnsList(dnsList); 
-                    currentDns = '1.1.1.1'; renderResults(); 
-                } 
-            }
-            if (button.classList.contains('test-latency-btn')) testAllEndpointsLatency();
-        }
-        
-        // Add this to your existing tab button click event listener
+
+        // Handle Tab Clicks
         if (target.classList.contains('tab-btn')) {
             const activeTabClasses = ['border-orange-500', 'text-orange-400'];
             const inactiveTabClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-500'];
@@ -1332,20 +1304,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.classList.remove(...activeTabClasses);
                 btn.classList.add(...inactiveTabClasses);
             });
-
             target.classList.add(...activeTabClasses);
             target.classList.remove(...inactiveTabClasses);
-
             document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
             const activePane = document.querySelector(target.dataset.tabTarget);
             activePane.classList.remove('hidden');
             updateQrCodeForActiveTab(activePane.id);
 
-            // NEW: Hide settings panel for Sing-Box and App URLs tabs
             const activeTabId = target.dataset.tabTarget;
             const resultsSidebar = document.getElementById('results-sidebar');
             const settingsPanel = document.getElementById('settings-panel');
-
             if (activeTabId === '#tab-singbox' || activeTabId === '#tab-app-urls') {
                 resultsSidebar.classList.remove('space-y-6');
                 settingsPanel.classList.add('hidden');
@@ -1353,8 +1321,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsSidebar.classList.add('space-y-6');
                 settingsPanel.classList.remove('hidden');
             }
+            return; // Done
         }
-        
+
+        // Handle Endpoint Type Tabs (IPv4/IPv6)
         if (target.classList.contains('endpoint-tab')) {
             const tabContainer = target.closest('.endpoint-tabs');
             const tabContents = tabContainer.parentElement.querySelectorAll('.endpoint-tab-content');
@@ -1362,6 +1332,184 @@ document.addEventListener('DOMContentLoaded', () => {
             target.classList.add('active');
             const tabType = target.dataset.type;
             tabContents.forEach(content => content.classList.toggle('hidden', content.dataset.type !== tabType));
+            return; // Done
+        }
+
+        // Handle App URL Section Clicks for QR Code
+        const contentSection = target.closest('.content-section');
+        if (contentSection) {
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            contentSection.classList.add('active');
+            updateQrCodeForActiveTab('tab-app-urls');
+            return; // Done
+        }
+
+        // Handle all other buttons inside the results area
+        if (button) {
+            if (button.id === 'generateAppSubLinksBtn') {
+                const WORKER_BASE_URL = "https://warp-sub.yebekhe.workers.dev"; // Use your worker URL
+                const accounts = getSavedAccounts();
+                if (accounts.length === 0) {
+                    alert(t('noSavedConfigsError'));
+                    return;
+                }
+
+                const essentialData = accounts.map(acc => ({
+                    privateKey: acc.account.privateKey, v4: acc.account.v4, v6: acc.account.v6,
+                    peerPublicKey: acc.account.peerPublicKey, reserved: acc.account.reserved
+                }));
+
+                const compressedData = LZString.compressToEncodedURIComponent(JSON.stringify(essentialData));
+                const clients = [
+                    { id: 'v2rayng', name: t('nekoBoxV2rayNG', { default: 'V2RayNG / NekoBox' }) },
+                    { id: 'streisand', name: t('streisandiOS') },
+                    { id: 'shadowrocket-std', name: t('shadowrocketStandard') }
+                ];
+
+                const modal = document.getElementById('customModal');
+                const linksContainer = document.createElement('div');
+                linksContainer.id = 'subscriptionLinksContainer';
+                linksContainer.className = 'space-y-4';
+                linksContainer.innerHTML = clients.map(client => `
+                <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-300">${client.name}</label>
+                    <div class="flex gap-2">
+                        <input type="text" value="${WORKER_BASE_URL}/sub/${client.id}/${compressedData}" readonly class="w-full bg-gray-900 border border-gray-600 text-white rounded-lg p-2.5 text-xs font-mono focus:ring-orange-500 focus:border-orange-500">
+                        <button class="copy-modal-link-btn bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg text-sm">${t('copy')}</button>
+                    </div>
+                </div>
+            `).join('');
+
+                modal.querySelector('#modalInput').classList.add('hidden');
+                modal.querySelector('#modalInput').parentElement.appendChild(linksContainer);
+                modal.querySelector('#modalTitle').textContent = t('appSubscriptionLinksTitle');
+                modal.querySelector('#modalDescription').textContent = t('appSubscriptionLinksDesc');
+                modal.querySelector('#modalConfirm').classList.add('hidden');
+                modal.querySelector('#modalCancel').textContent = t('close');
+                modal.classList.remove('hidden');
+
+                linksContainer.querySelectorAll('.copy-modal-link-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const input = btn.previousElementSibling;
+                        btn.disabled = true;
+                        navigator.clipboard.writeText(input.value).then(() => {
+                            const originalText = btn.textContent;
+                            btn.textContent = t('copied');
+                            setTimeout(() => {
+                                if (document.body.contains(btn)) {
+                                    btn.textContent = originalText;
+                                    btn.disabled = false;
+                                }
+                            }, 2000);
+                        }).catch(err => { console.error('Failed to copy:', err); btn.disabled = false; });
+                    });
+                });
+
+                const restoreModal = () => {
+                    const tempContainer = document.getElementById('subscriptionLinksContainer');
+                    if (tempContainer) tempContainer.remove();
+                    modal.querySelector('#modalInput').classList.remove('hidden');
+                    modal.querySelector('#modalConfirm').classList.remove('hidden');
+                    modal.querySelector('#modalCancel').textContent = t('cancel');
+                    modal.removeEventListener('click', cleanupHandler);
+                    document.removeEventListener('keydown', escapeHandler);
+                };
+                const cleanupHandler = (evt) => { if (evt.target === modal || evt.target === modal.querySelector('#modalCancel')) restoreModal(); };
+                const escapeHandler = (evt) => { if (evt.key === "Escape") restoreModal(); };
+                modal.addEventListener('click', cleanupHandler);
+                document.addEventListener('keydown', escapeHandler);
+                return;
+            }
+
+            if (button.classList.contains('copy-btn')) {
+                const textToCopy = unescape(button.dataset.clipboardText);
+                const originalText = button.innerHTML;
+                button.disabled = true;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    button.innerHTML = t('copied');
+                    setTimeout(() => { button.innerHTML = originalText; button.disabled = false; }, 2000);
+                });
+                return;
+            }
+
+            if (button.classList.contains('download-btn')) {
+                const content = unescape(button.dataset.downloadContent);
+                const blob = new Blob([content], { type: 'application/octet-stream' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = button.dataset.filename;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(a.href);
+                document.body.removeChild(a);
+                return;
+            }
+
+            if (button.classList.contains('share-btn')) {
+                const contentToShare = unescape(button.dataset.shareContent);
+                const originalText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = loadingButtonHTML;
+                try {
+                    const result = await shzAl.uploadPaste(contentToShare, { expiration: '1h' });
+                    const container = button.closest('div').nextElementSibling;
+                    container.querySelector('input').value = result.url;
+                    container.classList.remove('hidden');
+                    if (button.closest('.tab-pane')?.id === 'tab-singbox') updateQrCode(result.url, t('qrCodeSingBox'));
+                } catch (error) {
+                    console.error("Share failed:", error);
+                    alert(t('shareFailed'));
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+                return;
+            }
+
+            if (button.classList.contains('copy-link-btn')) {
+                const linkToCopy = button.previousElementSibling.value;
+                const originalText = button.innerHTML;
+                button.disabled = true;
+                navigator.clipboard.writeText(linkToCopy).then(() => {
+                    button.innerHTML = t('linkCopied');
+                    setTimeout(() => { button.innerHTML = originalText; button.disabled = false; }, 2000);
+                });
+                return;
+            }
+
+            if (button.classList.contains('save-custom-dns-btn')) {
+                const container = button.closest('.dns-container');
+                const customInput = container.querySelector('.dns-custom-input');
+                const dnsValue = customInput.value.trim();
+                if (!dnsValue) { alert(t('enterCustomDns')); return; }
+                const dnsName = await showModal({ title: t('enterDnsName', { value: dnsValue }), placeholder: t('myCustomDns'), confirmText: t('save') });
+                if (dnsName) {
+                    const dnsList = getCustomDnsList();
+                    if (dnsList.some(item => item.value === dnsValue)) { alert(t('dnsAlreadySaved')); return; }
+                    dnsList.push({ name: dnsName || t('myCustomDns'), value: dnsValue });
+                    saveCustomDnsList(dnsList);
+                    currentDns = dnsValue;
+                    renderResults();
+                }
+                return;
+            }
+
+            if (button.classList.contains('delete-custom-dns-btn')) {
+                const dnsValueToDelete = button.closest('.dns-container').querySelector('.dns-select').value;
+                if (confirm(t('deleteDnsConfirm', { value: dnsValueToDelete }))) {
+                    let dnsList = getCustomDnsList();
+                    dnsList = dnsList.filter(item => item.value !== dnsValueToDelete);
+                    saveCustomDnsList(dnsList);
+                    currentDns = '1.1.1.1';
+                    renderResults();
+                }
+                return;
+            }
+
+            if (button.classList.contains('test-latency-btn')) {
+                testAllEndpointsLatency();
+                return;
+            }
         }
     });
     

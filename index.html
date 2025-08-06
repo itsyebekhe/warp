@@ -1351,20 +1351,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     howToUseBtn.addEventListener('click', () => { 
-        fetch('https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.md').then(response => { 
-            if (!response.ok) { 
-                throw new Error('readme.md not found.'); 
-            } 
-            return response.text(); 
-        }).then(markdown => { 
-            howToUseContent.innerHTML = marked.parse(markdown); 
-            howToUseModal.classList.remove('hidden'); 
-        }).catch(error => { 
-            console.error('Error fetching readme:', error); 
-            howToUseContent.innerHTML = `<p class="text-red-400">${t('helpFileError')}</p>`; 
-            howToUseModal.classList.remove('hidden'); 
-        }); 
-    });
+    // Determine the correct README URL based on current language
+    const readmeUrls = {
+        'fa': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.fa.md',
+        'en': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.en.md',
+        'ru': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.ru.md',
+        'zh': 'https://raw.githubusercontent.com/itsyebekhe/warp/refs/heads/main/README.zh.md'
+    };
+    
+    const readmeUrl = readmeUrls[currentLanguage] || readmeUrls['en'];
+    
+    fetch(readmeUrl).then(response => { 
+        if (!response.ok) { 
+            throw new Error('README.md not found.'); 
+        } 
+        return response.text(); 
+    }).then(markdown => { 
+        howToUseContent.innerHTML = marked.parse(markdown); 
+        howToUseModal.classList.remove('hidden'); 
+    }).catch(error => { 
+        console.error('Error fetching readme:', error); 
+        howToUseContent.innerHTML = `<p class="text-red-400">${t('helpFileError')}</p>`; 
+        howToUseModal.classList.remove('hidden'); 
+    }); 
+});
     
     const closeModal = () => howToUseModal.classList.add('hidden');
     closeModalBtn.addEventListener('click', closeModal);

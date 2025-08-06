@@ -1,53 +1,96 @@
-# Ultimate WARP Generator User Guide
-This tool helps you easily create, save in your browser, and manage custom and optimized WARP configurations to use for free internet access.
-## How the tool works: Creating and managing configurations
-With the new save feature, working with the tool is divided into two parts:
-### 1. First visit and creating the first configuration
-1.  **Create configuration:** Click on the large orange **"Generate First Config"** button.
-2.  **Naming:** After a few seconds, you'll be asked to enter a name for this configuration (e.g., "My Phone" or "Laptop"). This name helps you identify it later.
-3.  **Save and display:** Your configuration is automatically **saved** in your browser's memory and the results are displayed for use. You won't need to recreate this configuration again.
-### 2. Subsequent visits and managing configurations
-When you visit this page again, instead of the previous large button, you'll see the **"Your Saved Configurations"** section.
-*   **Select configuration:** From the dropdown menu, select your desired configuration. Its information is automatically loaded with the latest Endpoints.
-*   **Update Endpoints button:** This button re-fetches the Endpoint list from the original source and replaces the best ones for your current configuration. **It's recommended to use this button every once in a while.**
-*   **Generate New button:** If you need a completely new configuration (with a new private key), use this button.
-*   **Rename button:** Changes the name of the selected configuration.
-*   **Delete button:** Permanently deletes the selected configuration from your browser's memory.
+### English Version (`README.en.md`)
 ---
-## New features: Manual Endpoint and DNS selection
-In the `STANDARD WG` and `AMNEZIAWG` tabs, new sections have been added for manual Endpoint and DNS selection. **These selections are shared and synchronized between the two tabs.**
-### Endpoint Selection
-*   **Endpoint list:** You can select any Endpoint from all available ones.
-*   **Recommended:** Servers starting with `8.` usually perform better in Iran's internet and are highlighted in orange at the top of the list.
-### DNS Selection and Saving
-*   **DNS list:** From the dropdown menu, you can select popular DNSs like Cloudflare, Google, or Quad9.
-*   **Custom DNS:** By selecting **"Custom..."**, a box appears for entering your desired DNS address.
-*   **Save DNS:** After entering a custom DNS, the **"Save"** button appears. By clicking it and selecting a name, you can save this DNS for future use in the list.
-*   **Delete DNS:** If you select a saved DNS from the list, the **"Delete"** button appears, allowing you to remove it.
-**Important note:** By selecting any server or DNS, all configurations in **all tabs** (Standard, Amnezia, Sing-Box, App URLs) are instantly updated.
+
+# How to Use Ultimate WARP Generator
+
+This tool helps you easily **create, save, and manage** custom, optimized WARP configurations directly in your browser and use them to access a free and open internet.
+
+## How It Works: Creating & Managing Configs
+
+With the new storage capability, using the tool is divided into two parts:
+
+### 1. First Visit & Creating Your First Config
+
+1.  **Generate Config:** Click the large orange **"Generate First Config"** button.
+2.  **Name It:** After a few seconds, you will be prompted to enter a name for this configuration (e.g., "My Phone" or "Laptop"). This name helps you identify it later.
+3.  **Save & Display:** Your configuration is automatically **saved in your browser's memory**, and the results are displayed for use. You won't need to generate this config again.
+
+### 2. Subsequent Visits & Managing Configs
+
+When you return to this page, you will see the **"Your Saved Configurations"** section instead of the large button.
+
+*   **Select a Config:** Choose your desired configuration from the dropdown menu. Its information will automatically load with the latest endpoints.
+*   **Refresh Endpoints Button:** This button fetches the latest list of endpoints from the source and updates your current config with them. **It is recommended to use this button periodically.**
+*   **Generate New Button:** Use this if you need a completely new configuration (with a new private key).
+*   **Rename Button:** Changes the name of the selected configuration.
+*   **Delete Button:** Permanently removes the selected configuration from your browser's memory.
+
 ---
-## Guide to using configurations in different clients
-After loading or creating a configuration, the results are displayed in four main tabs.
-### `STANDARD WG` Tab
-This tab is suitable for the official **WireGuard** client. There are three ways to add the configuration:
-*   **Method 1 (File):** Click the **"Download .conf"** button. In the WireGuard application, use **"Import tunnel(s) from file"** and select the downloaded file. (Suitable for **computer and mobile**)
-*   **Method 2 (QR code):** In the WireGuard mobile app, select **"Scan from QR code"** and scan the QR code displayed on the page. (Only for **mobile**)
-*   **Method 3 (Copy):** Click the **"Copy"** button. In the WireGuard desktop app, click **"Add Empty Tunnel"** and paste the copied text.
-### `AMNEZIAWG` Tab
-This tab is designed for the **AmneziaWG** client, which uses Jitter for more stability. The methods for adding the configuration are similar to the Standard WG tab (via file, QR code, or copy).
+
+## How to Use the Configurations
+
+After loading or generating a config, the results are displayed in four main tabs.
+
+### `STANDARD WG` & `AMNEZIAWG` Tabs
+
+These two tabs are suitable for the official **WireGuard** and **AmneziaWG** clients.
+
+#### Advanced Controls
+
+In these two tabs, you have full control over two key parts of the configuration:
+
+*   **Endpoint Selection:**
+    *   **Endpoint List:** You can choose any endpoint you want from the available list (both IPv4 and IPv6). Servers starting with `8.` (Recommended) usually perform better.
+    *   **Test Latency:** By clicking this button, the tool will automatically test all servers and **select the fastest endpoint for you.**
+
+*   **DNS Selection & Saving:**
+    *   **DNS List:** You can select popular DNS providers like Cloudflare, Google, or Quad9 from the dropdown.
+    *   **Custom DNS:** By selecting **"Custom..."** and entering a custom DNS address, a **"Save"** button will appear, allowing you to save that DNS for future use.
+
+**Important Note:** Changing the Endpoint or DNS will instantly update all configurations in **all tabs**.
+
+#### Methods for Adding Configs
+
+1.  **Method 1 (File):** Click the **"Download .conf"** button and import the downloaded file into your application. (Suitable for **Desktop and Mobile**)
+2.  **Method 2 (QR Code):** In your mobile app, select the option to scan a QR code and scan the code displayed on the page. (For **Mobile** only)
+3.  **Method 3 (Copy):** Copy the configuration content and paste it into a new empty tunnel in your desktop application.
+
 ### `SING-BOX` Tab
-This tab is useful for more advanced clients like **sing-box**, **Hiddify**, and similar applications. This configuration includes all servers for automatic speed testing.
-**Important:** Due to its size, this configuration's QR code cannot be scanned directly. You need to use the share link:
+
+This tab is for advanced clients like **sing-box**, **Hiddify**, and similar tools. This configuration includes all servers for automatic speed testing (URL Test).
+
+**Important:** Due to its large size, the QR code for this config is not directly scannable. You must use the share link:
+
 1.  In the `SING-BOX` tab, click the **"Share Link"** button.
-2.  Wait until a short link is created in the box below the buttons.
-3.  Immediately after the link is created, **a new QR code appears on the right side of the page.** This QR code contains the same link.
-4.  In your client (e.g., Hiddify), go to the section for adding a profile via link (Import from URL) and scan the **new QR code** or copy and paste the link.
-### `APP URLS` Tab (for mobile)
-This tab provides specific formats for quickly and easily adding configurations to popular mobile applications. **All formats in this section are generated based on your selected Endpoint and DNS.**
-**How to use:** Click on each section to display its **QR code** on the right side of the page.
-**NekoBox (Android) application:** This client uses JSON format. Click the **"Copy"** button and in the NekoBox application, use "Import from Clipboard".
-**V2RayNG (Android) and Streisand (iOS) applications:** They use the standard `wireguard://` format. You can scan the QR code or copy the link.
-**Shadowrocket (iOS) application:** Two versions are provided:
-  1.  `Standard version`: Regular WireGuard configuration.
-  2.  `Amnezia version`: Configuration with Jitter parameters for more stability.
-    You can scan the QR code for each or copy its link.
+2.  Wait for a short link to be generated in the box below the buttons.
+3.  As soon as the link is created, **a new QR code will appear on the right side of the page.** This QR code contains that same link.
+4.  In your client, go to the section for adding a profile from a URL and scan the **new QR code** or copy-paste the link.
+
+### `APP URLS` Tab (App-Specific Links)
+
+This tab provides special formats for quickly importing configs into popular applications. **All formats in this section are generated based on your selected Endpoint and DNS.**
+
+**How to use:** Click on any section to display its corresponding **QR code** on the right side of the page.
+
+*   **NekoBox / V2RayNG (Android) & Streisand (iOS):** You can scan the QR code or copy the link.
+*   **Shadowrocket (iOS):** Two versions are provided: `Standard` and `Amnezia` (for better stability). You can scan the QR code for either one.
+
+---
+
+## 🔥 Powerful New Feature: Dynamic Subscription Link
+
+This is the best and easiest way to keep all your configurations up to date. You get a single, stable link, and every time your client updates it, it will automatically receive the **newest and fastest servers**.
+
+**Important:** This feature uses **all of your saved accounts** simultaneously to build a complete profile.
+
+#### How to Create a Subscription Link:
+
+1.  Go to the **`APP URLS`** tab.
+2.  At the top of the tab, click the **"Generate Subscription Links"** button.
+3.  A window will open displaying subscription links for different clients (V2RayNG, Shadowrocket, etc.).
+4.  Copy the link for your client and add it to its subscription section.
+
+**That's it!** You no longer need to manually change the link. Whenever you create or delete an account in this tool, simply follow these steps again and replace the old link in your client with the new one.
+4.  复制适用于您客户端的链接，并将其添加到其订阅部分。
+
+**就是这样！** 您不再需要手动更改链接。每当您在此工具中创建或删除帐户时，只需再次执行这些步骤，并在您的客户端中用新链接替换旧链接即可。

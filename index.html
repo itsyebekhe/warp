@@ -88,7 +88,7 @@
                 <p class="text-sm text-blue-300">
                     <span class="font-semibold" id="mirrorNoticeText">Alternative Mirror:</span> 
                     <a id="mirrorLink" href="https://warpgenerator.pages.dev/" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">
-                        warpgenerator.pages.dev
+                        <span id="mirrorLinkText">warpgenerator.pages.dev</span>
                     </a>
                     <span class="text-xs ml-2" id="ifNotAccessibleText">(if this site is not accessible)</span>
                 </p>
@@ -838,10 +838,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const mirrorNotice = document.getElementById('mirrorNotice');
     const mirrorLink = document.getElementById('mirrorLink');
     const switchSiteBtn = document.getElementById('switchSiteBtn');
+
+    // Check current site and show appropriate mirror
+    if (currentHost === githubHost) {
+        // User is on GitHub Pages, show Cloudflare Pages mirror
+        showMirrorNotice(`https://${pagesHost}/`);
+    } else if (currentHost === pagesHost) {
+        // User is on Cloudflare Pages, show GitHub Pages mirror
+        showMirrorNotice(`https://${githubHost}/warp/`);
+    }
     
     // Function to show mirror notice
     function showMirrorNotice(mirrorUrl) {
         mirrorLink.href = mirrorUrl;
+
+        // Update the text content based on the mirror URL
+        const mirrorLinkText = document.getElementById('mirrorLinkText');
+        if (mirrorUrl.includes('warpgenerator.pages.dev')) {
+            mirrorLinkText.textContent = 'warpgenerator.pages.dev';
+        } else {
+            mirrorLinkText.textContent = 'itsyebekhe.github.io/warp';
+        }
+
         mirrorNotice.classList.remove('hidden');
         mirrorNotice.classList.add('mirror-notice');
     }

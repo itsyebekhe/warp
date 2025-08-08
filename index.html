@@ -839,12 +839,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveCustomDnsList = (dnsList) => localStorage.setItem(CUSTOM_DNS_STORAGE_KEY, JSON.stringify(dnsList));
     function setStatus(message) { statusText.textContent = message; }
     const generateRandomString = (len) => Array.from({ length: len }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62))).join('');
-    const extractKey = (data, keyName) => data.match(new RegExp(`${keyName}:\\s(.+)`))?.[1].trim() || null;
-    
+
     async function fetchAccountFromWorker() {
         setStatus(t('registeringAccount'));
-        const keygenResponse = await fetch('https://keygen.warp-generator.workers.dev'); if (!keygenResponse.ok) throw new Error('Keygen failed');
-        const keyData = await keygenResponse.text(); const privateKey = extractKey(keyData, 'PrivateKey'), publicKey = extractKey(keyData, 'PublicKey'); const installId = generateRandomString(22);
+        const keypair = await generateWireGuardKeypair();
+        const privateKey = keypair.privateKey, publicKey = keypair.publicKey;
+        const installId = generateRandomString(22);
         const response = await fetch('https://www.warp-generator.workers.dev/wg', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: publicKey, install_id: installId, fcm_token: `${installId}:APA91b${generateRandomString(134)}`, tos: new Date().toISOString(), type: 'Android', locale: 'en_US' }), });
         if (!response.ok) throw new Error(`API Account failed: ${response.status}`); const accountData = await response.json();
         return { privateKey, v4: accountData.config.interface.addresses.v4, v6: accountData.config.interface.addresses.v6, peerPublicKey: accountData.config.peers[0].public_key, reserved: Array.from(atob(accountData.config.client_id)).map(c => c.charCodeAt(0)) };
@@ -905,6 +905,27 @@ document.addEventListener('DOMContentLoaded', () => {
             shadowrocketStandardUrl: `wg://${endpoint}?publicKey=${encodedPeerPubKey}&privateKey=${encodedPrivateKey}&ip=${encodeURIComponent(addressesNoCidr)}&mtu=1280&dns=${encodeURIComponent(dns)}&udp=1&reserved=${encodedReserved}#${encodedName}`,
             shadowrocketAmneziaUrl: `wg://${endpoint}?publicKey=${encodedPeerPubKey}&privateKey=${encodedPrivateKey}&ip=${encodeURIComponent(addressesNoCidr)}&mtu=1280&dns=${encodeURIComponent(dns)}&udp=1&reserved=${encodedReserved}&obfs=amneziawg&obfsParam=4,40,70,0,0,0,0,0,0&flag=US#${encodedName}`,
             nekoboxJson: JSON.stringify(nekoboxConfig, null, 2)
+        };
+    }
+
+    async function generateWireGuardKeypair() {
+        const keyPair = await crypto.subtle.generateKey(
+            { name: "X25519" },
+            true,
+            ["deriveBits"]
+        );
+
+        const privateJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+        const publicJwk  = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+
+        const toStdBase64 = (b64url) =>
+            b64url
+                .replace(/-/g, "+")
+                .replace(/_/g, "/") + "=";
+
+        return {
+            privateKey: toStdBase64(privateJwk.d),
+            publicKey:  toStdBase64(publicJwk.x),
         };
     }
     

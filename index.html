@@ -845,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const keypair = await generateWireGuardKeypair();
         const privateKey = keypair.privateKey, publicKey = keypair.publicKey;
         const installId = generateRandomString(22);
-        const response = await fetch('https://www.warp-generator.workers.dev/wg', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: publicKey, install_id: installId, fcm_token: `${installId}:APA91b${generateRandomString(134)}`, tos: new Date().toISOString(), type: 'Android', locale: 'en_US' }), });
+        const response = await fetch('https://corsproxy.io/?url=https://api.cloudflareclient.com/v0a4005/reg', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: publicKey, install_id: installId, fcm_token: `${installId}:APA91b${generateRandomString(134)}`, tos: new Date().toISOString(), type: 'Android', locale: 'en_US' }), });
         if (!response.ok) throw new Error(`API Account failed: ${response.status}`); const accountData = await response.json();
         return { privateKey, v4: accountData.config.interface.addresses.v4, v6: accountData.config.interface.addresses.v6, peerPublicKey: accountData.config.peers[0].public_key, reserved: Array.from(atob(accountData.config.client_id)).map(c => c.charCodeAt(0)) };
     }
